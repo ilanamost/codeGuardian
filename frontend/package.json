@@ -29,6 +29,9 @@
     "tailwindcss": "^4.3.3",
     "web-tree-sitter": "0.26.13"
   },
+  "overrides": {
+    "dompurify": "3.4.17"
+  },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
     "@testing-library/jest-dom": "^7.0.0",
