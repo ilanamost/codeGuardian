@@ -178,9 +178,10 @@ describe('QA: api.service GET sharing adversarial', () => {
     // The first fetch settles before the one-tick cancel runs.
     pendingList[0].resolve(json(200, []))
     await aborted
-    await Promise.resolve()
-    await Promise.resolve()
-    await Promise.resolve()
+    // Let the settled fetch be forgotten, microtasks only: a macrotask here would run the stale
+    // cancel before the fresh request, which is the case under test. How many microtasks
+    // Response.text() needs depends on the Node version (3 on Node 24, 8 on Node 20), so wait generously.
+    for (let step = 0; step < 50; step += 1) await Promise.resolve()
 
     const fresh = api.request('GET', '/api/review', undefined, { signal: new AbortController().signal })
     await tick()
