@@ -1,0 +1,330 @@
+openapi: 3.0.3
+info:
+  title: AI Code Reviewer API
+  version: 0.2.0
+  description: >
+    Source-of-truth contract for the AI Code Reviewer & Quality Dashboard. The
+    Backend Agent implements this exactly; the Frontend and QA Agents build and
+    verify against it. Plain REST only: a review is submitted, analyzed
+    asynchronously, and polled until its status is `completed` or `failed`.
+    Per `.doc/glossary.md`, routes use singular entity names.
+    NOTE: only `/api/health` is implemented so far; the rest is the target state
+    (see `.plan/003-2026-10-19-ai-code-reviewer-concept.md`).
+
+servers:
+  - url: http://localhost:3001
+    description: Local backend
+
+paths:
+  /api/health:
+    get:
+      operationId: health
+      summary: Liveness probe used by tooling to wait for the backend
+      responses:
+        '200':
+          description: Server is up
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+
+  /api/review:
+    get:
+      operationId: listReview
+      summary: List reviews, newest first
+      responses:
+        '200':
+          description: Array of review summaries (no findings payload)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReviewSummary'
+    post:
+      operationId: createReview
+      summary: Submit a snippet or a public GitHub URL for review
+      description: >
+        Validates and stores the submission, then starts analysis in the background.
+        Submitted code is untrusted input and is never executed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewReview'
+      responses:
+        '202':
+          description: Review accepted; poll `GET /api/review/{id}` for the result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '400':
+          description: Missing/invalid fields, unsupported language, or snippet over the size limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: GitHub URL is not a public file or pull request URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/review/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: getReview
+      summary: A review with its findings, suggestions, and generated tests
+      responses:
+        '200':
+          description: The review. `findings`, `suggestion`, `generated_test` are empty until `status` is `completed`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+        '404':
+          description: Review not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/dashboard:
+    get:
+      operationId: getDashboard
+      summary: Aggregate quality metrics across all completed reviews in the store
+      responses:
+        '200':
+          description: Dashboard aggregates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+
+components:
+  schemas:
+    NewReview:
+      type: object
+      required: [source_type]
+      description: >
+        `source_type: snippet` requires `content` (and `language`);
+        `source_type: github_url` requires `url`.
+      properties:
+        source_type:
+          type: string
+          enum: [snippet, github_url]
+        title:
+          type: string
+          maxLength: 120
+        language:
+          type: string
+          example: typescript
+        content:
+          type: string
+          minLength: 1
+          maxLength: 100000
+        url:
+          type: string
+          format: uri
+          example: https://github.com/org/repo/blob/main/src/index.ts
+    Review:
+      type: object
+      required: [id, source_type, status, created_at, finding, suggestion, generated_test]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        source_type:
+          type: string
+          enum: [snippet, github_url]
+        language:
+          type: string
+          nullable: true
+        content:
+          type: string
+          description: The reviewed code (fetched content for `github_url`).
+        url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        summary:
+          type: string
+          nullable: true
+          description: Short AI-written overview; null until completed.
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+        failure_reason:
+          type: string
+          nullable: true
+          description: Safe, user-facing reason when `status` is `failed`.
+        finding:
+          type: array
+          items:
+            $ref: '#/components/schemas/Finding'
+        suggestion:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+        generated_test:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeneratedTest'
+    ReviewSummary:
+      type: object
+      required: [id, source_type, status, created_at, finding_count]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        source_type:
+          type: string
+          enum: [snippet, github_url]
+        language:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+        finding_count:
+          type: integer
+          minimum: 0
+    Finding:
+      type: object
+      required: [id, category, severity, message, line_start]
+      properties:
+        id:
+          type: string
+        category:
+          type: string
+          enum: [style, bug, security]
+        severity:
+          type: string
+          enum: [info, low, medium, high, critical]
+        message:
+          type: string
+        line_start:
+          type: integer
+          minimum: 1
+        line_end:
+          type: integer
+          minimum: 1
+          nullable: true
+        rule:
+          type: string
+          nullable: true
+          description: Short identifier of the violated rule or weakness class, e.g. `CWE-89`.
+    Suggestion:
+      type: object
+      required: [id, message, line_start, replacement]
+      description: A suggested refactor tied to a code range.
+      properties:
+        id:
+          type: string
+        finding_id:
+          type: string
+          nullable: true
+          description: The finding this suggestion addresses, when there is one.
+        message:
+          type: string
+        line_start:
+          type: integer
+          minimum: 1
+        line_end:
+          type: integer
+          minimum: 1
+          nullable: true
+        replacement:
+          type: string
+          description: Proposed replacement code for the range.
+    GeneratedTest:
+      type: object
+      required: [id, framework, content]
+      properties:
+        id:
+          type: string
+        framework:
+          type: string
+          example: vitest
+        content:
+          type: string
+          description: Test source. Never executed by the backend.
+    Dashboard:
+      type: object
+      required: [review_count, finding_total, by_category, by_severity]
+      properties:
+        review_count:
+          type: integer
+          minimum: 0
+        finding_total:
+          type: integer
+          minimum: 0
+        by_category:
+          type: object
+          required: [style, bug, security]
+          properties:
+            style: { type: integer, minimum: 0 }
+            bug: { type: integer, minimum: 0 }
+            security: { type: integer, minimum: 0 }
+        by_severity:
+          type: object
+          required: [info, low, medium, high, critical]
+          properties:
+            info: { type: integer, minimum: 0 }
+            low: { type: integer, minimum: 0 }
+            medium: { type: integer, minimum: 0 }
+            high: { type: integer, minimum: 0 }
+            critical: { type: integer, minimum: 0 }
+    # Shape mandated by `.rule/error-handling-rules.md`. Applies to every non-2xx
+    # response. Internal details (stack traces, AI provider payloads, keys) never appear here.
+    Error:
+      type: object
+      required: [error, requestId]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable code, e.g. `validation_error`, `not_found`, `upstream_error`.
+              example: validation_error
+            message:
+              type: string
+              description: Human-readable summary safe to show a user.
+            details:
+              type: object
+              description: Optional structured context, e.g. the offending field.
+              nullable: true
+        requestId:
+          type: string
+          description: Correlation id, also returned in the `x-request-id` header.

@@ -1,0 +1,55 @@
+/* Expose the tokens as Tailwind utilities (bg-primary, text-muted, ...). */
+/* Breakpoints: the single definition behind the xs:, md:, lg:, xl: utilities. */
+@theme {
+  --breakpoint-xs: 480px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+}
+
+@theme inline {
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-darker: var(--color-primary-darker);
+  --color-sidebar-bg: var(--color-sidebar-bg);
+  --color-sidebar-text: var(--color-sidebar-text);
+  --color-sidebar-active: var(--color-sidebar-active);
+  --color-page-bg: var(--color-page-bg);
+  --color-surface: var(--color-surface);
+  --color-card: var(--color-card);
+  --color-border: var(--color-border);
+  --color-input-border: var(--color-input-border);
+  --color-error-text: var(--color-error-text);
+  --color-text: var(--color-text);
+  --color-text-muted: var(--color-text-muted);
+  --color-code-bg: var(--color-code-bg);
+  --color-code-text: var(--color-code-text);
+  --color-sign-in-bg: var(--color-sign-in-bg);
+  --color-sign-in-card: var(--color-sign-in-card);
+  --color-critical: var(--color-critical);
+  --color-critical-soft: var(--color-critical-soft);
+  --color-high: var(--color-high);
+  --color-high-soft: var(--color-high-soft);
+  --color-medium: var(--color-medium);
+  --color-medium-soft: var(--color-medium-soft);
+  --color-low: var(--color-low);
+  --color-low-soft: var(--color-low-soft);
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-danger: var(--color-danger);
+  --color-danger-soft: var(--color-danger-soft);
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-queued: var(--color-queued);
+  --color-queued-soft: var(--color-queued-soft);
+  --color-neutral: var(--color-neutral);
+  --color-neutral-soft: var(--color-neutral-soft);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --shadow-card: var(--shadow-card);
+}

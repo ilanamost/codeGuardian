@@ -1,0 +1,16 @@
+{
+  "notification": {
+    "reviewCompleted": true,
+    "reviewFailed": true,
+    "criticalFinding": true,
+    "email": false
+  },
+  "theme": "light",
+  "editorFontSize": "medium",
+  "historyDensity": "comfortable",
+  "reviewFocus": "all",
+  "strictness": "balanced",
+  "explanation": "detailed",
+  "generatedTest": true,
+  "language": "auto"
+}

@@ -1,0 +1,13 @@
+{
+  "fe-1": "import { useAuth } from './hooks/useAuth'\n\nexport function App() {\n  const { user } = useAuth()\n  console.log('render', user)\n  return <main>{user ? `Hello ${user.name}` : 'Sign in'}</main>\n}\n",
+  "fe-2": "import { useEffect, useState } from 'react'\n\nexport function useAuth() {\n  const [user, setUser] = useState<any>(null)\n  useEffect(() => {\n    fetch('/api/me').then((response) => response.json()).then(setUser)\n  }, [])\n  return { user }\n}\n",
+  "fe-3": "// TODO: support other locales\nexport function formatPrice(value) {\n  return '$' + value.toFixed(2)\n}\n",
+  "be-1": "import express from 'express'\nimport { userRouter } from './routes/user'\n\nconst app = express()\napp.use('/user', userRouter)\napp.listen(3000, () => console.log('listening'))\n",
+  "be-2": "import { Router } from 'express'\n\nexport const userRouter = Router()\n\nuserRouter.get('/:id', (req: any, res) => {\n  res.json({ id: req.params.id })\n})\n",
+  "be-3": "import json\n\n# TODO: read the seed path from the command line\nwith open('seed.json') as file:\n    print(json.load(file))\n",
+  "mo-1": "import { Text, View } from 'react-native'\n\nexport function Home() {\n  return (\n    <View>\n      <Text>Home</Text>\n    </View>\n  )\n}\n",
+  "mo-2": "export async function get(path) {\n  const response = await fetch('https://api.example.com' + path)\n  return response.json()\n}\n",
+  "sc-1": "type ButtonProps = { label: string, onClick: () => void }\n\nexport function Button({ label, onClick }: ButtonProps) {\n  return <button onClick={onClick}>{label}</button>\n}\n",
+  "sc-2": "type ModalProps = { open: boolean, children: any }\n\nexport function Modal({ open, children }: ModalProps) {\n  if (!open) return null\n  return <div role=\"dialog\">{children}</div>\n}\n",
+  "sc-3": "export const theme = {\n  primary: '#2563eb',\n  radius: '8px'\n}\n"
+}

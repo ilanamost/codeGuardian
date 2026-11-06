@@ -1,0 +1,99 @@
+{
+  "importByLink": {
+    "example-org/demo/blob/main/src/greet.ts": {
+      "name": "greet.ts",
+      "language": "TypeScript",
+      "content": "export function greet(name: any) {\n  const message = \"Hello, \" + name\n  console.log(message)\n  return message\n}\n",
+      "fileList": [
+        {
+          "path": "src/greet.ts",
+          "language": "TypeScript",
+          "size": 112
+        }
+      ],
+      "skippedList": [],
+      "fileContentList": [
+        {
+          "path": "src/greet.ts",
+          "language": "TypeScript",
+          "content": "export function greet(name: any) {\n  const message = \"Hello, \" + name\n  console.log(message)\n  return message\n}\n"
+        }
+      ]
+    },
+    "example-org/demo/pull/1": {
+      "name": "example-org/demo#1",
+      "language": "TypeScript",
+      "content": "// ===== src/greet.ts =====\nexport function greet(name: any) {\n  const message = \"Hello, \" + name\n  console.log(message)\n  return message\n}\n\n# ===== src/util.py =====\ndef total(value_list):\n    result = 0\n    for value in value_list:\n        result = result + value\n    return result\n",
+      "fileList": [
+        {
+          "path": "src/greet.ts",
+          "language": "TypeScript",
+          "size": 112
+        },
+        {
+          "path": "src/util.py",
+          "language": "Python",
+          "size": 117
+        }
+      ],
+      "skippedList": [
+        {
+          "path": "assets/logo.png",
+          "reason": "unsupported_type"
+        },
+        {
+          "path": "src/old.js",
+          "reason": "removed"
+        }
+      ],
+      "fileContentList": [
+        {
+          "path": "src/greet.ts",
+          "language": "TypeScript",
+          "content": "export function greet(name: any) {\n  const message = \"Hello, \" + name\n  console.log(message)\n  return message\n}\n"
+        },
+        {
+          "path": "src/util.py",
+          "language": "Python",
+          "content": "def total(value_list):\n    result = 0\n    for value in value_list:\n        result = result + value\n    return result\n"
+        }
+      ]
+    }
+  },
+  "errorByLink": {
+    "example-org/demo/blob/main/src/huge.ts": {
+      "status": 413,
+      "code": "payload_too_large",
+      "message": "The GitHub import is over the fileChar limit (50000).",
+      "details": {
+        "limit": "fileChar",
+        "max": 50000,
+        "path": "src/huge.ts"
+      }
+    }
+  },
+  "errorByRepo": {
+    "example-org/rate-limited": {
+      "status": 429,
+      "code": "rate_limited",
+      "message": "GitHub rate limit for unauthenticated requests is used up; try again after details.resetAt.",
+      "details": {
+        "resetAt": "2027-01-01T00:00:00.000Z"
+      }
+    },
+    "example-org/broken": {
+      "status": 502,
+      "code": "upstream_error",
+      "message": "GitHub could not be reached or sent an unexpected answer."
+    },
+    "example-org/slow": {
+      "status": 504,
+      "code": "upstream_timeout",
+      "message": "GitHub did not answer in time (callTimeout, 10000 ms).",
+      "details": {
+        "limit": "callTimeout",
+        "maxMs": 10000
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "account": {
+    "username": "john.doe",
+    "fullName": "John Doe",
+    "email": "john@company.com",
+    "initials": "JD",
+    "memberSince": "March 12, 2025"
+  },
+  "password": "mock-password"
+}

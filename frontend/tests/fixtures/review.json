@@ -1,0 +1,147 @@
+{
+    "template": {
+        "title": "New review",
+        "status": "completed",
+        "language": "TypeScript",
+        "analyzedAgo": "2 minutes ago",
+        "qualityScore": 72,
+        "content": "const getUser = async (id: string) => {\n  const response = await fetch('https://api.example.com/user/' + id)\n  const data = await response.json()\n  return data\n}\n\nconst getUserName = (user: any) => {\n  return user.name.toUpperCase()\n}\n\nexport { getUser, getUserName }\n",
+        "findingCount": [
+            {
+                "severity": "critical",
+                "count": 1
+            },
+            {
+                "severity": "high",
+                "count": 2
+            },
+            {
+                "severity": "medium",
+                "count": 3
+            },
+            {
+                "severity": "low",
+                "count": 1
+            }
+        ],
+        "finding": [
+            {
+                "id": "f1",
+                "severity": "critical",
+                "category": "security",
+                "message": "Potential injection vulnerability",
+                "detail": "Line 2 - Unsanitized user input in fetch URL",
+                "line_start": 2
+            },
+            {
+                "id": "f2",
+                "severity": "high",
+                "category": "bug",
+                "message": "Missing error handling",
+                "detail": "Line 3 - No check for response.ok",
+                "line_start": 3
+            },
+            {
+                "id": "f3",
+                "severity": "low",
+                "category": "readability",
+                "message": "Code style issue",
+                "detail": "Line 11 - Missing semicolon",
+                "line_start": 11
+            }
+        ],
+        "suggestion": [
+            {
+                "id": "s1",
+                "title": "Encode the id in the URL",
+                "detail": "Use encodeURIComponent before building the fetch URL"
+            },
+            {
+                "id": "s2",
+                "title": "Check the response before parsing",
+                "detail": "Check response.ok and throw a typed error before parsing JSON"
+            },
+            {
+                "id": "s3",
+                "title": "Type the user parameter",
+                "detail": "Replace the any type on user with a User interface"
+            }
+        ]
+    },
+    "generatedTestList": [
+        {
+            "id": "t1",
+            "sourceFile": "src/userService.ts",
+            "testFile": "userService.test.ts",
+            "language": "TypeScript",
+            "repo": "frontend-app",
+            "code": "import { getUser } from './userService'\n\ndescribe('getUser', () => {\n  it('should return the parsed user for a valid id', async () => {\n    const mockFetch = jest.spyOn(global, 'fetch').mockResolvedValue({\n      ok: true,\n      json: async () => ({ id: '1', name: 'John Doe' })\n    } as any)\n\n    const result = await getUser('1')\n    expect(result).toEqual({ id: '1', name: 'John Doe' })\n\n    mockFetch.mockRestore()\n  })\n\n  it('should handle 404 errors', async () => {\n    jest.spyOn(global, 'fetch').mockResolvedValue({ ok: false, status: 404 } as any)\n\n    await expect(getUser('missing')).rejects.toThrow()\n  })\n})\n",
+            "altCode": "import { getUser } from './userService'\n\ndescribe('getUser (regenerated)', () => {\n  it('encodes the id before building the URL', async () => {\n    const mockFetch = jest.spyOn(global, 'fetch').mockResolvedValue({\n      ok: true,\n      json: async () => ({})\n    } as any)\n\n    await getUser('a/b')\n\n    expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/user/a%2Fb')\n  })\n})\n"
+        },
+        {
+            "id": "t2",
+            "sourceFile": "src/hooks/useAuth.ts",
+            "testFile": "useAuth.test.ts",
+            "language": "TypeScript",
+            "repo": "frontend-app",
+            "code": "import { renderHook, act } from '@testing-library/react'\nimport { useAuth } from './useAuth'\n\ndescribe('useAuth', () => {\n  it('starts logged out', () => {\n    const { result } = renderHook(() => useAuth())\n\n    expect(result.current.isLoggedIn).toBe(false)\n  })\n\n  it('logs in a user', () => {\n    const { result } = renderHook(() => useAuth())\n\n    act(() => result.current.login('john@company.com'))\n\n    expect(result.current.isLoggedIn).toBe(true)\n  })\n})\n",
+            "altCode": "import { renderHook, act } from '@testing-library/react'\nimport { useAuth } from './useAuth'\n\ndescribe('useAuth (regenerated)', () => {\n  it('logs out and clears the user', () => {\n    const { result } = renderHook(() => useAuth())\n\n    act(() => result.current.login('john@company.com'))\n    act(() => result.current.logout())\n\n    expect(result.current.user).toBeNull()\n  })\n})\n"
+        }
+    ],
+    "reviewById": {
+        "r1": {
+            "title": "Authentication Service",
+            "status": "completed",
+            "language": "TypeScript",
+            "analyzedAgo": "2 hours ago"
+        },
+        "r2": {
+            "title": "Payment API",
+            "status": "completed",
+            "language": "JavaScript",
+            "analyzedAgo": "5 hours ago"
+        },
+        "r3": {
+            "title": "User Service",
+            "status": "completed",
+            "language": "Python",
+            "analyzedAgo": "1 day ago"
+        },
+        "r4": {
+            "title": "Data Processor",
+            "status": "failed",
+            "language": "Go",
+            "analyzedAgo": "2 days ago"
+        },
+        "r5": {
+            "title": "Notification Worker",
+            "status": "in_progress",
+            "language": "TypeScript",
+            "analyzedAgo": "2 days ago"
+        },
+        "r6": {
+            "title": "Billing Export",
+            "status": "queued",
+            "language": "Java",
+            "analyzedAgo": "3 days ago"
+        },
+        "r7": {
+            "title": "Search Indexer",
+            "status": "pending",
+            "language": "Go",
+            "analyzedAgo": "3 days ago"
+        },
+        "r8": {
+            "title": "Legacy Importer",
+            "status": "cancelled",
+            "language": "Python",
+            "analyzedAgo": "4 days ago"
+        },
+        "r9": {
+            "title": "Config Loader",
+            "status": "completed",
+            "language": "JavaScript",
+            "analyzedAgo": "5 days ago"
+        }
+    }
+}

@@ -1,0 +1,382 @@
+{
+  "statList": [
+    {
+      "id": "total",
+      "label": "Total Reviews",
+      "value": 24,
+      "trend": 12
+    },
+    {
+      "id": "completed",
+      "label": "Completed",
+      "value": 21,
+      "trend": 16
+    },
+    {
+      "id": "failed",
+      "label": "Failed",
+      "value": 3,
+      "trend": -25
+    },
+    {
+      "id": "quality",
+      "label": "Avg. Quality Score",
+      "value": 78,
+      "suffix": " / 100",
+      "trend": 8
+    }
+  ],
+  "severityCountList": [
+    {
+      "severity": "critical",
+      "label": "Critical",
+      "count": 6
+    },
+    {
+      "severity": "high",
+      "label": "High",
+      "count": 14
+    },
+    {
+      "severity": "medium",
+      "label": "Medium",
+      "count": 18
+    },
+    {
+      "severity": "low",
+      "label": "Low",
+      "count": 10
+    }
+  ],
+  "categoryCountList": [
+    {
+      "id": "security",
+      "label": "Security",
+      "count": 14
+    },
+    {
+      "id": "bug",
+      "label": "Bugs",
+      "count": 12
+    },
+    {
+      "id": "readability",
+      "label": "Readability",
+      "count": 10
+    },
+    {
+      "id": "maintainability",
+      "label": "Maintainability",
+      "count": 8
+    },
+    {
+      "id": "performance",
+      "label": "Performance",
+      "count": 4
+    }
+  ],
+  "activityByRange": {
+    "7d": [
+      {
+        "date": "Apr 20",
+        "count": 6
+      },
+      {
+        "date": "Apr 21",
+        "count": 8
+      },
+      {
+        "date": "Apr 22",
+        "count": 5
+      },
+      {
+        "date": "Apr 23",
+        "count": 7
+      },
+      {
+        "date": "Apr 24",
+        "count": 11
+      },
+      {
+        "date": "Apr 25",
+        "count": 8
+      },
+      {
+        "date": "Apr 26",
+        "count": 10
+      }
+    ],
+    "14d": [
+      {
+        "date": "Apr 13",
+        "count": 4
+      },
+      {
+        "date": "Apr 14",
+        "count": 7
+      },
+      {
+        "date": "Apr 15",
+        "count": 5
+      },
+      {
+        "date": "Apr 16",
+        "count": 9
+      },
+      {
+        "date": "Apr 17",
+        "count": 6
+      },
+      {
+        "date": "Apr 18",
+        "count": 8
+      },
+      {
+        "date": "Apr 19",
+        "count": 3
+      },
+      {
+        "date": "Apr 20",
+        "count": 6
+      },
+      {
+        "date": "Apr 21",
+        "count": 8
+      },
+      {
+        "date": "Apr 22",
+        "count": 5
+      },
+      {
+        "date": "Apr 23",
+        "count": 7
+      },
+      {
+        "date": "Apr 24",
+        "count": 11
+      },
+      {
+        "date": "Apr 25",
+        "count": 8
+      },
+      {
+        "date": "Apr 26",
+        "count": 10
+      }
+    ],
+    "30d": [
+      {
+        "date": "Mar 28",
+        "count": 3
+      },
+      {
+        "date": "Mar 29",
+        "count": 5
+      },
+      {
+        "date": "Mar 30",
+        "count": 4
+      },
+      {
+        "date": "Mar 31",
+        "count": 6
+      },
+      {
+        "date": "Apr 1",
+        "count": 8
+      },
+      {
+        "date": "Apr 2",
+        "count": 5
+      },
+      {
+        "date": "Apr 3",
+        "count": 7
+      },
+      {
+        "date": "Apr 4",
+        "count": 9
+      },
+      {
+        "date": "Apr 5",
+        "count": 6
+      },
+      {
+        "date": "Apr 6",
+        "count": 4
+      },
+      {
+        "date": "Apr 7",
+        "count": 7
+      },
+      {
+        "date": "Apr 8",
+        "count": 5
+      },
+      {
+        "date": "Apr 9",
+        "count": 8
+      },
+      {
+        "date": "Apr 10",
+        "count": 6
+      },
+      {
+        "date": "Apr 11",
+        "count": 4
+      },
+      {
+        "date": "Apr 12",
+        "count": 7
+      },
+      {
+        "date": "Apr 13",
+        "count": 5
+      },
+      {
+        "date": "Apr 14",
+        "count": 9
+      },
+      {
+        "date": "Apr 15",
+        "count": 6
+      },
+      {
+        "date": "Apr 16",
+        "count": 8
+      },
+      {
+        "date": "Apr 17",
+        "count": 3
+      },
+      {
+        "date": "Apr 18",
+        "count": 6
+      },
+      {
+        "date": "Apr 19",
+        "count": 8
+      },
+      {
+        "date": "Apr 20",
+        "count": 5
+      },
+      {
+        "date": "Apr 21",
+        "count": 7
+      },
+      {
+        "date": "Apr 22",
+        "count": 11
+      },
+      {
+        "date": "Apr 23",
+        "count": 8
+      },
+      {
+        "date": "Apr 24",
+        "count": 10
+      },
+      {
+        "date": "Apr 25",
+        "count": 9
+      },
+      {
+        "date": "Apr 26",
+        "count": 12
+      }
+    ]
+  },
+  "recentReviewList": [
+    {
+      "id": "r1",
+      "title": "Authentication Service",
+      "language": "TypeScript",
+      "timeAgo": "2 hours ago",
+      "status": "completed",
+      "high": 3,
+      "medium": 2,
+      "low": 1
+    },
+    {
+      "id": "r2",
+      "title": "Payment API",
+      "language": "JavaScript",
+      "timeAgo": "5 hours ago",
+      "status": "completed",
+      "high": 5,
+      "medium": 1,
+      "low": 0
+    },
+    {
+      "id": "r3",
+      "title": "User Service",
+      "language": "Python",
+      "timeAgo": "1 day ago",
+      "status": "completed",
+      "high": 2,
+      "medium": 3,
+      "low": 1
+    },
+    {
+      "id": "r4",
+      "title": "Data Processor",
+      "language": "Go",
+      "timeAgo": "2 days ago",
+      "status": "failed",
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    {
+      "id": "r5",
+      "title": "Notification Worker",
+      "language": "TypeScript",
+      "timeAgo": "2 days ago",
+      "status": "in_progress",
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    {
+      "id": "r6",
+      "title": "Billing Export",
+      "language": "Java",
+      "timeAgo": "3 days ago",
+      "status": "queued",
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    {
+      "id": "r7",
+      "title": "Search Indexer",
+      "language": "Go",
+      "timeAgo": "3 days ago",
+      "status": "pending",
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    {
+      "id": "r8",
+      "title": "Legacy Importer",
+      "language": "Python",
+      "timeAgo": "4 days ago",
+      "status": "cancelled",
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    {
+      "id": "r9",
+      "title": "Config Loader",
+      "language": "JavaScript",
+      "timeAgo": "5 days ago",
+      "status": "completed",
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    }
+  ]
+}

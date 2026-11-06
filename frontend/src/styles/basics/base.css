@@ -1,0 +1,114 @@
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  -webkit-font-smoothing: antialiased;
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+/* The one scrollbar style for the whole app. Do not style scrollbars elsewhere. */
+* {
+  &::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--scrollbar-size);
+
+    &:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* Chromium (121+) ignores ::-webkit-scrollbar sizing as soon as scrollbar-width or
+   scrollbar-color is set, so the standard properties must only reach engines without
+   the pseudo-element (Firefox). Never set them outside this block. */
+@supports not selector(::-webkit-scrollbar) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+
+  .hide-bar {
+    scrollbar-width: none;
+  }
+}
+
+/* The one pointer-cursor rule for the whole app. Tailwind preflight resets buttons to
+   cursor: default. Do not set cursor: pointer on individual components. */
+button:not(:disabled),
+a[href],
+[role='button']:not([aria-disabled='true']),
+[role='tab']:not([aria-disabled='true']),
+select:not(:disabled),
+summary,
+label:has(input:not(:disabled)) {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* Hides the bar of a row that still scrolls by touch or keyboard (narrow-screen tab rows).
+   Chromium/WebKit use the pseudo-element here, Firefox uses the fallback block above. */
+.hide-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Finding dots in the code editor's glyph margin (FINDING_GLYPH_CLASS in lib/review.constants.ts).
+   Monaco keeps only [a-z0-9-_] in decoration class names, so the dot cannot use Tailwind variant
+   classes; it is drawn here from the severity tokens, as in SeverityDot. */
+.editor-finding-glyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &::before {
+    content: '';
+    display: block;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--finding-glyph-color);
+  }
+}
+
+.editor-finding-glyph-critical,
+.editor-finding-glyph-high {
+  --finding-glyph-color: var(--color-critical);
+}
+
+.editor-finding-glyph-medium {
+  --finding-glyph-color: var(--color-medium);
+}
+
+.editor-finding-glyph-low,
+.editor-finding-glyph-info {
+  --finding-glyph-color: var(--color-low);
+}

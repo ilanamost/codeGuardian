@@ -1,0 +1,92 @@
+{
+  "account": {
+    "email": "john@company.com"
+  },
+  "repoList": [
+    {
+      "id": "frontend-app",
+      "name": "frontend-app",
+      "description": "Development web application"
+    },
+    {
+      "id": "backend-api",
+      "name": "backend-api",
+      "description": "Node.js API service"
+    },
+    {
+      "id": "mobile-app",
+      "name": "mobile-app",
+      "description": "React Native mobile application"
+    },
+    {
+      "id": "shared-components",
+      "name": "shared-components",
+      "description": "UI components library"
+    }
+  ],
+  "fileListByRepo": {
+    "frontend-app": [
+      {
+        "id": "fe-1",
+        "path": "src/App.tsx",
+        "language": "TypeScript"
+      },
+      {
+        "id": "fe-2",
+        "path": "src/hooks/useAuth.ts",
+        "language": "TypeScript"
+      },
+      {
+        "id": "fe-3",
+        "path": "src/utils/format.js",
+        "language": "JavaScript"
+      }
+    ],
+    "backend-api": [
+      {
+        "id": "be-1",
+        "path": "src/server.ts",
+        "language": "TypeScript"
+      },
+      {
+        "id": "be-2",
+        "path": "src/routes/user.ts",
+        "language": "TypeScript"
+      },
+      {
+        "id": "be-3",
+        "path": "scripts/seed.py",
+        "language": "Python"
+      }
+    ],
+    "mobile-app": [
+      {
+        "id": "mo-1",
+        "path": "src/screens/Home.tsx",
+        "language": "TypeScript"
+      },
+      {
+        "id": "mo-2",
+        "path": "src/api/client.js",
+        "language": "JavaScript"
+      }
+    ],
+    "shared-components": [
+      {
+        "id": "sc-1",
+        "path": "src/Button.tsx",
+        "language": "TypeScript"
+      },
+      {
+        "id": "sc-2",
+        "path": "src/Modal.tsx",
+        "language": "TypeScript"
+      },
+      {
+        "id": "sc-3",
+        "path": "src/theme.ts",
+        "language": "TypeScript"
+      }
+    ]
+  }
+}
