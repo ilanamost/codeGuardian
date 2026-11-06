@@ -46,11 +46,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # The whole suite runs, nothing is skipped. `--retry=2` re-runs a failed test up to two times so
-      # the known timing flake (qa-038 file-list-toggle "rapid clicks", a 5 s timeout on a small runner)
-      # cannot randomly block a deploy; a test that fails every attempt still fails the job.
+      # The frontend unit tests run. qa-github-wizard-adversarial.test.ts is excluded: it boots the real
+      # backend app in process (tests/utils/backendHarness.ts), which needs the backend's dependencies
+      # (express, ...), and this job installs the frontend only. Run it locally or in a backend-aware job.
+      # `--retry=2` re-runs a failed test up to two times so the known timing flake (qa-038
+      # file-list-toggle "rapid clicks", a 5 s timeout on a small runner) cannot randomly block a deploy;
+      # a test that fails every attempt still fails the job.
       - name: Unit tests
-        run: npx vitest run --retry=2
+        run: npx vitest run --retry=2 --exclude tests/unit/qa-github-wizard-adversarial.test.ts
 
       # Fail fast: an empty or unset VITE_API_URL would build fine and deploy a site whose API calls go
       # to the Pages origin instead of the backend.
