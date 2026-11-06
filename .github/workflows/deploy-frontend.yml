@@ -52,7 +52,12 @@ jobs:
       # `--retry=2` re-runs a failed test up to two times so the known timing flake (qa-038
       # file-list-toggle "rapid clicks", a 5 s timeout on a small runner) cannot randomly block a deploy;
       # a test that fails every attempt still fails the job.
+      # The tests need VITE_API_URL set (src/lib/config.ts reads it with no fallback), as a local
+      # frontend env file provides it. Their fake backend answers every call, so this placeholder is
+      # never contacted; the real value is only checked and used in the steps below.
       - name: Unit tests
+        env:
+          VITE_API_URL: http://localhost:3001
         run: npx vitest run --retry=2 --exclude tests/unit/qa-github-wizard-adversarial.test.ts
 
       # Fail fast: an empty or unset VITE_API_URL would build fine and deploy a site whose API calls go
