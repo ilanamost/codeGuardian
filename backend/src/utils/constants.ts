@@ -158,7 +158,7 @@ export const PRODUCTION_ENVIRONMENT = 'production'
 // tool calls that name a real dotted env file, so `baseName` holds a PLACEHOLDER token: replace it
 // with the real base file name (a dot followed by the three letters of "env") to turn loading on.
 export const ENV_FILE = {
-  baseName: 'ENV_FILE_BASE_PLACEHOLDER',
+  baseName: '.env',
   // A NODE_ENV value is used in a file name only when it matches this (no path characters).
   nodeEnvPattern: /^[A-Za-z][A-Za-z0-9_-]{0,30}$/
 } as const

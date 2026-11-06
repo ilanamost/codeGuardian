@@ -7,9 +7,9 @@
   "main": "src/index.ts",
   "scripts": {
     "predev": "npm run db:setup",
-    "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "prestart": "npm run db:setup",
-    "start": "tsx --env-file=.env src/index.ts",
+    "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:db": "vitest run --config vitest.db.config.ts",
