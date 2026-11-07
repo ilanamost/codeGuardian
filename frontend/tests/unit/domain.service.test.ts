@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppError } from '../../src/models/app-error'
 import { AppSettings } from '../../src/models/settings.model'
+import { SESSION_TOKEN_STORAGE_KEY } from '../../src/lib/api.constants'
 import { createServices } from '../../src/services'
 import { createDashboardService } from '../../src/services/dashboard.service'
 import { createGithubService } from '../../src/services/github.service'
@@ -220,7 +221,9 @@ describe('createServices', () => {
     expect(await services.review.list()).toEqual(recentReviewList)
 
     expect(fetchSpy.mock.calls.map(([input]) => new URL(String(input)).pathname)).toEqual(['/api/dashboard', '/api/review'])
-    expect(storage.get).not.toHaveBeenCalled()
+    // Plan 047: the one read is the session token (token mode), once, when the source is built.
+    expect(storage.get).toHaveBeenCalledTimes(1)
+    expect(vi.mocked(storage.get).mock.calls[0][0]).toBe(SESSION_TOKEN_STORAGE_KEY)
     expect(storage.getOr).not.toHaveBeenCalled()
     expect(storage.set).not.toHaveBeenCalled()
     expect(getItem).not.toHaveBeenCalled()

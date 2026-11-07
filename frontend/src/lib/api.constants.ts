@@ -52,3 +52,11 @@ export const SNIPPET_SOURCE_TYPE = 'snippet'
 // The custom header every state-changing request carries (plan 028, CSRF). It makes the browser
 // send a CORS preflight, which only the configured frontend origin passes.
 export const CSRF_HEADER = { name: 'X-CSRF-Protection', value: '1' } as const
+
+// Plan 047 (contract 0.18.0): the opt-in header on sign-in and register, which asks the backend
+// for a `sessionToken` (only when its SESSION_TOKEN_FALLBACK switch is on).
+export const SESSION_MODE_HEADER = { name: 'X-Session-Mode', value: 'token' } as const
+
+// Where the token is kept in token mode (through storage.service), and its shape (43 URL-safe characters).
+export const SESSION_TOKEN_STORAGE_KEY = 'cr.sessionToken'
+export const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/

@@ -284,7 +284,7 @@ export default function CodeEditor({
                 aria-label="Language"
                 value={language}
                 onChange={(event) => onLanguageChange?.(event.target.value)}
-                className="rounded-sm border border-input-border bg-code-bg px-2 py-1 text-xs text-code-text"
+                className="rounded-sm border border-input-border bg-code-bg px-2 py-1 text-base text-code-text sm:text-xs"
               >
                 {languageList.map((item) => (
                   <option key={item} value={item}>

@@ -258,7 +258,7 @@ function ReviewView({
                   if (event.key === 'Enter') finishEditName(true)
                   if (event.key === 'Escape') finishEditName(false)
                 }}
-                className="w-64 max-w-full rounded-md border border-input-border bg-card px-2 py-1 text-sm font-medium"
+                className="w-64 max-w-full rounded-md border border-input-border bg-card px-2 py-1 text-base font-medium sm:text-sm"
               />
             ) : (
               <>

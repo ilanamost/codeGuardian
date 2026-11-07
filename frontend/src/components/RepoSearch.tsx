@@ -18,7 +18,7 @@ export default function RepoSearch({ value, onChange }: Props) {
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Search repositories..."
-        className="w-full rounded-md border border-input-border bg-surface py-2 pr-3 pl-9 text-sm"
+        className="w-full rounded-md border border-input-border bg-surface py-2 pr-3 pl-9 text-base sm:text-sm"
       />
     </div>
   )

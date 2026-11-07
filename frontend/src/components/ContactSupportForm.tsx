@@ -18,7 +18,7 @@ function emptyRequest(email = ''): SupportRequest {
 }
 
 const inputClass =
-  'w-full rounded-md border border-input-border bg-surface px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-primary'
+  'w-full rounded-md border border-input-border bg-surface px-3 py-2 text-base sm:text-sm outline-none focus:outline-2 focus:outline-primary'
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null

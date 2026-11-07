@@ -72,7 +72,19 @@ export const CONFIG_KEY = {
   githubOAuthFake: 'GITHUB_OAUTH_FAKE',
   // Optional (plan 042): SameSite of the session and sign-in state cookies: lax (default),
   // strict or none. `none` only with NODE_ENV=production. Not a secret.
-  cookieSameSite: 'COOKIE_SAMESITE'
+  cookieSameSite: 'COOKIE_SAMESITE',
+  // Optional (plan 047): on|off (default off). When on, sign-in and register return the session
+  // id as `sessionToken` to a client that sends `X-Session-Mode: token`. Not a secret.
+  sessionTokenFallback: 'SESSION_TOKEN_FALLBACK'
+} as const
+
+// Plan 047: the bearer-token session fallback. The accepted spellings of the setting, the one
+// value of the opt-in header, and the Authorization scheme.
+export const SESSION_TOKEN = {
+  on: 'on',
+  off: 'off',
+  modeValue: 'token',
+  bearerPattern: /^Bearer(?:\s+(\S*))?$/i
 } as const
 
 // The Claude model reviews use when ANTHROPIC_MODEL is not set (plan 039, Open Question 1).
@@ -102,6 +114,9 @@ export const HEADER = {
   contentType: 'Content-Type',
   origin: 'origin',
   cookie: 'cookie',
+  // Plan 047: the bearer token and the opt-in to receive it.
+  authorization: 'Authorization',
+  sessionMode: 'X-Session-Mode',
   contentTypeOption: 'X-Content-Type-Options',
   contentSecurityPolicy: 'Content-Security-Policy',
   contentDisposition: 'Content-Disposition',
@@ -113,6 +128,8 @@ export const HEADER = {
 // Plan 028: server-side sessions (Open Question 3, answer A).
 export const SESSION = {
   cookieName: 'cr_session',
+  // Plan 047: an answer that carries a session token must not be stored by a cache.
+  tokenCacheControl: 'no-store',
   // With NODE_ENV=production: `__Host-` needs Secure, Path=/ and no Domain.
   productionCookiePrefix: '__Host-',
   idByteLength: 32,

@@ -5,6 +5,7 @@ import { unfinishedStatusList } from '../../src/models/review.model'
 import type { NewReviewDto, ReviewDetailDto, ReviewDto } from '../../src/models/dto'
 import { createApiService, type FetchFn } from '../../src/services/api.service'
 import { createSessionService } from '../../src/services/session.service'
+import type { StorageService } from '../../src/services/storage.service'
 import type { DataSource } from '../../src/services/data-source'
 import type { ReviewService } from '../../src/services/review.service'
 
@@ -126,16 +127,22 @@ export interface StartBackendOption {
   store?: BackendStore
   signIn?: boolean
   wrapFetch?: (fetchFn: FetchFn) => FetchFn
+  // Plan 047: the backend's SESSION_TOKEN_FALLBACK switch (off by default).
+  sessionTokenFallback?: boolean
+  // Plan 047: where the HTTP source keeps the session token (the real localStorage by default).
+  storage?: StorageService
+  // Plan 047: the browser drops every Set-Cookie (Safari with a cross-site API).
+  blockCookie?: boolean
 }
 
 export async function startBackend(option: StartBackendOption = {}): Promise<RunningBackend> {
   const { createApp } = (await import(/* @vite-ignore */ resolve(backendSrc, 'app.ts'))) as {
-    createApp: (config: { frontendUrl: string; enableTestRoute: boolean }, appOption?: object) => BackendApp
+    createApp: (config: { frontendUrl: string; enableTestRoute: boolean; sessionTokenFallback?: boolean }, appOption?: object) => BackendApp
   }
   const store = option.store ?? (await createBackendStore())
   // A new app per test is a new in-memory store: no reviews, the GitHub mock, account and settings.
   const app = createApp(
-    { frontendUrl, enableTestRoute: false },
+    { frontendUrl, enableTestRoute: false, sessionTokenFallback: option.sessionTokenFallback ?? false },
     { store, analyzer: option.analyzer, githubClient: await createFakeGithubClient() }
   )
   let server: Server | undefined
@@ -145,8 +152,17 @@ export async function startBackend(option: StartBackendOption = {}): Promise<Run
   const { port } = server!.address() as AddressInfo
   const baseUrl = `http://${host}:${port}`
   const jar = createCookieJar()
-  const fetchFn = option.wrapFetch ? option.wrapFetch(jar.fetchFn) : jar.fetchFn
-  const source = createApiService({ baseUrl, fetchFn })
+  // A blocked cookie: the jar never sees a Set-Cookie, so no cookie is ever sent back.
+  const jarFetch: FetchFn = option.blockCookie
+    ? async (input, init) => {
+        const response = await globalThis.fetch(input, init)
+        const headers = new Headers(response.headers)
+        headers.delete('set-cookie')
+        return new Response(response.body, { status: response.status, headers })
+      }
+    : jar.fetchFn
+  const fetchFn = option.wrapFetch ? option.wrapFetch(jarFetch) : jarFetch
+  const source = createApiService({ baseUrl, fetchFn, storage: option.storage })
   if (option.signIn !== false) await createSessionService(source).signIn({ username: DEMO_USERNAME, password: DEMO_PASSWORD })
   return {
     source,

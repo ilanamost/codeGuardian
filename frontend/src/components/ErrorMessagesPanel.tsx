@@ -21,7 +21,7 @@ export default function ErrorMessagesPanel() {
           placeholder="Search error messages..."
           value={query}
           onChange={(event) => setQuery(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent py-2 text-sm outline-none"
+          className="min-w-0 flex-1 bg-transparent py-2 text-base sm:text-sm outline-none"
         />
       </label>
       {rowList.length === 0 ? (

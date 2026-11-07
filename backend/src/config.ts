@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { hasQueryOrFragment } from './lib/frontend-base.js'
-import { ANALYZER_MODEL_DEFAULT, BOOLEAN_TEXT, CONFIG_KEY, COOKIE_SAMESITE, COOKIE_SAMESITE_LIST, type CookieSameSite, FLAG_DEFAULT, LOG_OPERATION, LogLevel, MODEL_ID_PATTERN, PRODUCTION_ENVIRONMENT } from './utils/constants.js'
+import { ANALYZER_MODEL_DEFAULT, BOOLEAN_TEXT, CONFIG_KEY, COOKIE_SAMESITE, COOKIE_SAMESITE_LIST, type CookieSameSite, FLAG_DEFAULT, LOG_OPERATION, LogLevel, MODEL_ID_PATTERN, PRODUCTION_ENVIRONMENT, SESSION_TOKEN } from './utils/constants.js'
 import { ERROR_MESSAGE } from './utils/error-messages.js'
 
 // Server configuration, read once at startup from the environment variables (the values live in
@@ -34,6 +34,8 @@ const configSchema = z.object({
   // Optional (plan 042): the rule and the production-only `none` are in `cookieSameSiteOf`, so
   // no message can contain the value.
   [CONFIG_KEY.cookieSameSite]: z.string().optional(),
+  // Optional (plan 047): on or off; blank means off. The message never contains the value.
+  [CONFIG_KEY.sessionTokenFallback]: z.string().optional(),
   [CONFIG_KEY.anthropicApiKey]: z.string().optional(),
   [CONFIG_KEY.anthropicModel]: z
     .string()
@@ -65,6 +67,8 @@ export type AppConfig = {
   production: boolean
   // COOKIE_SAMESITE (plan 042): `lax` unless set; `none` only in production.
   cookieSameSite: CookieSameSite
+  // SESSION_TOKEN_FALLBACK (plan 047): sign-in and register may return `sessionToken`. Off unless set to on.
+  sessionTokenFallback: boolean
   // ANTHROPIC_API_KEY (plan 039): undefined when unset or blank. Never logged, returned or
   // put in an error message.
   anthropicApiKey?: string
@@ -113,6 +117,14 @@ function cookieSameSiteOf(data: z.infer<typeof configSchema>): CookieSameSite {
   return value as CookieSameSite
 }
 
+// Blank or `off` is off, `on` is on, anything else stops the server. The message never echoes the value.
+function sessionTokenFallbackOf(data: z.infer<typeof configSchema>): boolean {
+  const value = data[CONFIG_KEY.sessionTokenFallback]?.trim() ?? ''
+  if (value === '' || value === SESSION_TOKEN.off) return false
+  if (value === SESSION_TOKEN.on) return true
+  throw new ConfigError(ERROR_MESSAGE.configInvalid(ERROR_MESSAGE.sessionTokenFallbackInvalid))
+}
+
 export function loadConfig(environment: Environment): AppConfig {
   const result = configSchema.safeParse(environment)
   if (!result.success) {
@@ -129,6 +141,7 @@ export function loadConfig(environment: Environment): AppConfig {
     databaseUrl: data[CONFIG_KEY.databaseUrl]?.trim() || undefined,
     production: data[CONFIG_KEY.nodeEnv] === PRODUCTION_ENVIRONMENT,
     cookieSameSite: cookieSameSiteOf(data),
+    sessionTokenFallback: sessionTokenFallbackOf(data),
     anthropicApiKey: data[CONFIG_KEY.anthropicApiKey]?.trim() || undefined,
     anthropicModel: data[CONFIG_KEY.anthropicModel]?.trim() || ANALYZER_MODEL_DEFAULT,
     githubOAuth: githubOAuthOf(data),

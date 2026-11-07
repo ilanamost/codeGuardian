@@ -71,7 +71,7 @@ describe('CORS with credentials', () => {
     expect(response.status).toBe(204)
     expect(response.headers['access-control-allow-origin']).toBe(frontendUrl)
     expect(response.headers['access-control-allow-credentials']).toBe('true')
-    expect(response.headers['access-control-allow-headers']).toBe('Content-Type,X-CSRF-Protection')
+    expect(response.headers['access-control-allow-headers']).toBe('Content-Type,X-CSRF-Protection,Authorization,X-Session-Mode')
   })
 
   it('a foreign origin gets no Access-Control-Allow-Origin for itself and no credentials', async () => {

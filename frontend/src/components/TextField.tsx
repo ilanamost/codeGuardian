@@ -33,7 +33,7 @@ export default function TextField({ label, value, onChange, type = 'text', autoC
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-md border border-input-border bg-surface px-3 py-2 text-sm outline-none focus:outline-2 focus:outline-primary"
+        className="w-full rounded-md border border-input-border bg-surface px-3 py-2 text-base sm:text-sm outline-none focus:outline-2 focus:outline-primary"
       />
       {error && (
         <p id={errorId} role="alert" className="text-sm text-error-text">

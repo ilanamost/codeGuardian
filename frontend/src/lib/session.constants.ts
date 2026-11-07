@@ -55,6 +55,10 @@ export const AUTH_ERROR_TEXT: Record<AuthErrorCode, string> = {
   rate_limited: 'Too many sign-in attempts. Please wait a moment and try again.'
 }
 
+// Plan 047: a session that ends within this time of a successful sign-in is read as a browser that
+// dropped the session cookie (Safari blocks third-party cookies), not as an expired session.
+export const COOKIE_BLOCKED_WINDOW_MS = 5000
+
 // The live checklist of the register form, one line per password rule.
 export const PASSWORD_RULE_LABEL: Record<PasswordRuleId, string> = {
   length: '8 to 200 characters',

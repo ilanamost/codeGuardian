@@ -2,18 +2,18 @@ import { Router } from 'express'
 import { accountOf, type AccountService } from '../service/account.service.js'
 import { asyncHandler } from '../lib/async-handler.js'
 import { unauthorizedError } from '../lib/error.js'
-import { clientIpOf, readSessionId, sessionOf } from '../lib/session-guard.js'
+import { clientIpOf, readSessionId, sessionOf, wantsSessionToken } from '../lib/session-guard.js'
 import { clearSessionCookie, setSessionCookie, type CookieConfig } from '../lib/session.js'
 import type { SecurityLog } from '../lib/security-log.js'
 import { parse } from '../lib/validate.js'
 import { signInSchema } from '../schema/session.schema.js'
 import type { SessionService } from '../service/session.service.js'
-import { LogLevel, ROUTE, SECURITY_LOG } from '../utils/constants.js'
+import { HEADER, LogLevel, ROUTE, SECURITY_LOG, SESSION } from '../utils/constants.js'
 import { ERROR_MESSAGE, SUBJECT } from '../utils/error-messages.js'
 import { HttpStatus } from '../utils/http-status.js'
 
 // /api/session (plan 028, Scope 3): sign in, session restore and sign out.
-export function createSessionRouter(service: SessionService, accountService: AccountService, cookie: CookieConfig, log: SecurityLog): Router {
+export function createSessionRouter(service: SessionService, accountService: AccountService, cookie: CookieConfig, log: SecurityLog, tokenFallback = false): Router {
   const router = Router()
 
   // Public. The same 401 for an unknown user name and a wrong password.
@@ -21,6 +21,12 @@ export function createSessionRouter(service: SessionService, accountService: Acc
     const input = parse(signInSchema, req.body, SUBJECT.signIn)
     const { account, started } = await service.signIn(input, readSessionId(req, cookie), { requestId: req.requestId, ip: clientIpOf(req) })
     setSessionCookie(res, cookie, started.id, started.maxAgeMs)
+    // Plan 047: the session id in the body only when the setting is on and the client asked for it,
+    // and then the answer is not cacheable.
+    if (tokenFallback && wantsSessionToken(req)) {
+      res.set(HEADER.cacheControl, SESSION.tokenCacheControl).json({ ...accountOf(account), sessionToken: started.id })
+      return
+    }
     res.json(accountOf(account))
   }))
 
