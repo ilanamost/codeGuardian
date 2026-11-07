@@ -99,7 +99,7 @@ export default function GithubConnectCard({ account, connecting = false, switchi
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${errorId} ${hintId}` : hintId}
               onChange={(event) => change(event.target.value)}
-              className="w-full rounded-md border border-input-border bg-surface px-3 py-1.5 text-sm outline-none focus:outline-2 focus:outline-primary aria-invalid:border-critical"
+              className="w-full rounded-md border border-input-border bg-surface px-3 py-1.5 text-base sm:text-sm outline-none focus:outline-2 focus:outline-primary aria-invalid:border-critical"
             />
             {error && (
               <p id={errorId} role="alert" className="mt-1 text-xs break-words text-critical">

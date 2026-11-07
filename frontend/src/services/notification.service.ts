@@ -20,7 +20,8 @@ export interface NotificationService {
   notify(type: NotificationType, message: string, preference: NotificationPreference): boolean
   // Plan 028: the one toast of a session that ended mid-use (a 401), whatever the preferences,
   // de-duplicated like the errors, so polling and parallel requests show it once.
-  notifySessionEnded(): boolean
+  // `cookieBlocked`: the session ended right after sign-in, so the text names the cookie.
+  notifySessionEnded(cookieBlocked?: boolean): boolean
 }
 
 export interface NotificationServiceOption {
@@ -91,12 +92,12 @@ export function createNotificationService(option: NotificationServiceOption = {}
     notify(type, message, preference) {
       return showPreferenceToast(toast, preference, type, message)
     },
-    notifySessionEnded() {
+    notifySessionEnded(cookieBlocked = false) {
       const time = now()
       const last = shownAt.get(ERROR_CODE.unauthorized)
       if (last !== undefined && time - last < dedupeMs) return false
       shownAt.set(ERROR_CODE.unauthorized, time)
-      toast.error(SESSION_ERROR_MESSAGE.sessionEnded)
+      toast.error(cookieBlocked ? SESSION_ERROR_MESSAGE.cookieBlocked : SESSION_ERROR_MESSAGE.sessionEnded)
       return true
     }
   }

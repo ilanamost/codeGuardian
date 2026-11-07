@@ -31,7 +31,7 @@ export default function ReviewActivity({ activityByRange, loading = false }: Pro
           aria-label="Date range"
           value={range}
           onChange={(event) => setRange(event.target.value as ActivityRange)}
-          className="rounded-sm border border-input-border bg-surface px-2 py-1 text-xs"
+          className="rounded-sm border border-input-border bg-surface px-2 py-1 text-base sm:text-xs"
         >
           {activityRangeList.map((item) => (
             <option key={item.id} value={item.id}>

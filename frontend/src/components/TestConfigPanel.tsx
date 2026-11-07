@@ -45,7 +45,7 @@ export default function TestConfigPanel({
           id="test-framework"
           value={framework}
           onChange={(event) => onFrameworkChange(event.target.value as TestFramework)}
-          className="rounded-md border border-border bg-card px-3 py-2 text-sm"
+          className="rounded-md border border-border bg-card px-3 py-2 text-base sm:text-sm"
         >
           {frameworkList.map((item) => (
             <option key={item} value={item}>

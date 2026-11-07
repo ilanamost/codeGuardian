@@ -3,7 +3,7 @@ import { unauthorizedError } from './error.js'
 import type { SecurityLog } from './security-log.js'
 import { readCookie, sessionCookieName, type CookieConfig } from './session.js'
 import type { SessionService } from '../service/session.service.js'
-import { LogLevel, SECURITY_LOG } from '../utils/constants.js'
+import { HEADER, LogLevel, SECURITY_LOG, SESSION_TOKEN } from '../utils/constants.js'
 import { ERROR_MESSAGE } from '../utils/error-messages.js'
 
 // The central session middleware (plan 028, Scope 4). Every route needs a valid session except
@@ -35,8 +35,18 @@ function isPublic(req: Request, publicList: readonly PublicRoute[]): boolean {
   return publicList.some((route) => route.method === method && route.path === path)
 }
 
+// The raw session id of the request (plan 047). `Authorization: Bearer <id>` wins over the
+// cookie. A bearer value is returned as sent, so a wrong or malformed one resolves to the generic
+// 401: there is never a silent fallback to the cookie. Another scheme is not a session credential.
 export function readSessionId(req: Request, cookie: CookieConfig): string | undefined {
+  const bearer = SESSION_TOKEN.bearerPattern.exec(req.get(HEADER.authorization)?.trim() ?? '')
+  if (bearer) return bearer[1] ?? ''
   return readCookie(req, sessionCookieName(cookie))
+}
+
+// True when the client asked for the token in the body (`X-Session-Mode: token`).
+export function wantsSessionToken(req: Request): boolean {
+  return req.get(HEADER.sessionMode)?.trim() === SESSION_TOKEN.modeValue
 }
 
 export function createSessionGuard(sessionService: SessionService, publicList: readonly PublicRoute[], cookie: CookieConfig, log: SecurityLog): RequestHandler {

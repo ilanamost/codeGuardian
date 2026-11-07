@@ -33,10 +33,10 @@ export interface ServicesOption {
 }
 
 // Builds every domain service on one data source (plan 035: the HTTP API, unless a test passes
-// its own). Browser storage only keeps the settings cache (settings.service), never app data.
+// its own). Browser storage only keeps the settings cache (settings.service) and, in token mode, the session token (plan 047), never app data.
 export function createServices(option: ServicesOption = {}): Services {
   const storage = option.storage ?? createStorageService()
-  const source = option.dataSource ?? createApiService()
+  const source = option.dataSource ?? createApiService({ storage })
   const base: Services = {
     review: createReviewService(source),
     dashboard: createDashboardService(source),

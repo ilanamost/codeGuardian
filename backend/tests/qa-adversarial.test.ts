@@ -568,7 +568,7 @@ describe('QA: errors and CORS', () => {
     expect(goodPreflight.status).toBe(204)
     expect(goodPreflight.headers['access-control-allow-origin']).toBe(frontendUrl)
     expect(goodPreflight.headers['access-control-allow-credentials']).toBe('true')
-    expect(goodPreflight.headers['access-control-allow-headers']).toBe('Content-Type,X-CSRF-Protection')
+    expect(goodPreflight.headers['access-control-allow-headers']).toBe('Content-Type,X-CSRF-Protection,Authorization,X-Session-Mode')
     expect(goodPreflight.headers['access-control-allow-methods']).toContain('DELETE')
   })
 

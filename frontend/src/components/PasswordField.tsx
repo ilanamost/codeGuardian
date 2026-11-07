@@ -43,7 +43,7 @@ export default function PasswordField({ label, value, onChange, readOnly = false
           aria-invalid={error ? true : undefined}
           aria-describedby={description}
           onChange={(event) => onChange?.(event.target.value)}
-          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm outline-none"
+          className="min-w-0 flex-1 bg-transparent px-3 py-2 text-base sm:text-sm outline-none"
         />
         <button
           type="button"

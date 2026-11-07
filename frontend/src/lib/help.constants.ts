@@ -133,8 +133,8 @@ export const issueList: HelpIssue[] = [
     title: "Can't access my account",
     summary: 'Login, session or permission problems.',
     whatHappened: 'You are signed out unexpectedly or see an Unauthorized message.',
-    cause: ['Your session expired.', 'Incorrect credentials.', 'Your account lacks permission for the action.'],
-    fix: ['Sign in again.', 'Check your email and password.', 'Update your password in Settings, Security.']
+    cause: ['Your session expired.', 'Incorrect credentials.', 'Your account lacks permission for the action.', 'Your browser blocks cookies for this site (common on iPhone).'],
+    fix: ['Sign in again.', 'Check your email and password.', 'Update your password in Settings, Security.', 'Allow cookies for this site, or open the app on its own address.']
   }
 ]
 

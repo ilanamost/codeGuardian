@@ -1,4 +1,5 @@
 import { createAction, createListenerMiddleware, isAnyOf, isRejected, type TypedStartListening } from '@reduxjs/toolkit'
+import { COOKIE_BLOCKED_WINDOW_MS } from '../lib/session.constants'
 import { REVIEW_TEXT } from '../lib/review.constants'
 import { SETTINGS_WAIT_MAX_MS } from '../lib/settings.constants'
 import { AppError, isAppErrorJson, type AppErrorJson } from '../models/app-error'
@@ -141,6 +142,15 @@ export function createAppListener(services: Services) {
     return settingsLoad === 'failed' ? withShown(preference, type) : preference
   }
 
+  // When the last sign-in succeeded (plan 047).
+  let signedInAt: number | null = null
+  startListening({
+    actionCreator: signIn.fulfilled,
+    effect: () => {
+      signedInAt = Date.now()
+    }
+  })
+
   startListening({
     predicate: (action) => isRejected(action) || errorReported.match(action),
     effect: async (action, api) => {
@@ -150,10 +160,13 @@ export function createAppListener(services: Services) {
       // /login, keeping the path), one toast, and no error toast for the 401 itself.
       if (isSessionEndedFailure(action)) {
         if (api.getState().session.status !== 'signedIn') return
+        // Plan 047: a 401 right after a successful sign-in means the cookie was not kept.
+        const cookieBlocked = signedInAt !== null && Date.now() - signedInAt <= COOKIE_BLOCKED_WINDOW_MS
+        signedInAt = null
         api.dispatch(sessionEnded())
         services.settings.clearCache()
         services.session.abortAll()
-        services.notification.notifySessionEnded()
+        services.notification.notifySessionEnded(cookieBlocked)
         return
       }
       if (isSuperseded(action, api.getState()) || isShownInline(action)) return

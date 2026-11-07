@@ -45,6 +45,8 @@ export default defineConfig({
         // Plan 039: a blank key keeps the stub analyzer, so a key in the backend's local settings
         // never makes e2e reviews call the real Claude API (slower than the 5 s polls).
         ANTHROPIC_API_KEY: '',
+        // Plan 047: sign-in may return a sessionToken; the browser uses it only if the cookie fails.
+        SESSION_TOKEN_FALLBACK: 'on',
         PORT: BACKEND_PORT,
         FRONTEND_URL,
         DATABASE_URL: env.TEST_DATABASE_URL ?? ''

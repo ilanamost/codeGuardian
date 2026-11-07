@@ -1,10 +1,11 @@
-import { CSRF_HEADER } from '../lib/api.constants'
+import { API_PATH, CSRF_HEADER, HTTP_STATUS, SESSION_MODE_HEADER, SESSION_TOKEN_PATTERN, SESSION_TOKEN_STORAGE_KEY } from '../lib/api.constants'
 import { sniffAvatarType } from '../lib/avatarFile'
 import { API_URL } from '../lib/config'
 import { requestTracker, type RequestTracker } from '../lib/requestTracker'
 import { AppError } from '../models/app-error'
 import { ERROR_CODE } from '../utils/error-messages'
 import type { DataSource, HttpMethod, Query, RequestOption } from './data-source'
+import { createStorageService, type StorageService } from './storage.service'
 
 // The HTTP data source and the only module that calls fetch: one fetch per request, JSON in and
 // out, failures mapped to AppError. No timeout and no retry (plan 017, Open Question 3).
@@ -20,6 +21,11 @@ import type { DataSource, HttpMethod, Query, RequestOption } from './data-source
 // it is sent until it settles, released in `finally`; a shared GET is counted once per fetch,
 // not once per caller, and abortAll releases whatever this source still counts. A `background`
 // request is not counted.
+// Plan 047 (contract 0.18.0): sign-in and register send X-Session-Mode: token. When the answer
+// has a `sessionToken`, GET /api/session is sent with the cookie only: 200 means the cookie works
+// (the token is dropped, nothing is stored); 401 means the browser blocked it (token mode: the
+// token is kept in storage and sent as `Authorization: Bearer` on every request). The token is
+// cleared on sign-out and on any 401, is never put in a URL, and is never logged or shown.
 export type FetchFn = (input: string, init: RequestInit) => Promise<Response>
 
 export interface ApiServiceOption {
@@ -28,6 +34,8 @@ export interface ApiServiceOption {
   // Plan 037: where requests in flight are counted for the global loader (the app's tracker by
   // default; tests pass their own).
   tracker?: RequestTracker
+  // Plan 047: where the session token is kept in token mode (the browser storage by default).
+  storage?: StorageService
 }
 
 function buildUrl(baseUrl: string, path: string, query?: Query): string {
@@ -85,12 +93,49 @@ interface Call {
   binary: boolean
   // Not counted for the global loader (plan 037).
   background: boolean
+  // Plan 047: asks the backend for a `sessionToken` (sign-in and register).
+  askToken?: boolean
+  // Plan 047: sent without the bearer token, so only the cookie can authorise it.
+  cookieOnly?: boolean
+}
+
+function pathOf(url: string): string {
+  return `/${url.split('?')[0].replace(/^\/+/, '')}`
+}
+
+function sessionTokenOf(value: unknown): string | undefined {
+  if (typeof value !== 'object' || value === null) return undefined
+  const token = (value as { sessionToken?: unknown }).sessionToken
+  return typeof token === 'string' && SESSION_TOKEN_PATTERN.test(token) ? token : undefined
 }
 
 export function createApiService(option: ApiServiceOption = {}): DataSource {
   const baseUrl = option.baseUrl ?? API_URL
   const fetchFn: FetchFn = option.fetchFn ?? ((input, init) => globalThis.fetch(input, init))
   const tracker = option.tracker ?? requestTracker
+
+  const storage = option.storage ?? createStorageService()
+  const isToken = (value: unknown): value is string => typeof value === 'string' && SESSION_TOKEN_PATTERN.test(value)
+  // Token mode only: the session token, restored from storage on load.
+  let sessionToken: string | undefined = storage.get(SESSION_TOKEN_STORAGE_KEY, isToken)
+
+  function forgetToken() {
+    sessionToken = undefined
+    try {
+      storage.remove(SESSION_TOKEN_STORAGE_KEY)
+    } catch {
+      // Nothing is stored when storage is unavailable.
+    }
+  }
+
+  function keepToken(token: string) {
+    sessionToken = token
+    try {
+      storage.set(SESSION_TOKEN_STORAGE_KEY, token)
+    } catch {
+      // The token then lasts until the page is reloaded.
+    }
+  }
 
   const inFlight = new Map<string, SharedGet>()
 
@@ -107,11 +152,13 @@ export function createApiService(option: ApiServiceOption = {}): DataSource {
     return once
   }
 
-  function headersOf(method: HttpMethod, body: unknown, contentType?: string): Record<string, string> {
+  function headersOf(method: HttpMethod, body: unknown, contentType?: string, call?: Call): Record<string, string> {
     const headers: Record<string, string> = { Accept: jsonType }
     if (body instanceof Blob) headers['Content-Type'] = contentType ?? body.type
     else if (body !== undefined) headers['Content-Type'] = jsonType
     if (method !== 'GET') headers[CSRF_HEADER.name] = CSRF_HEADER.value
+    if (call?.askToken) headers[SESSION_MODE_HEADER.name] = SESSION_MODE_HEADER.value
+    if (sessionToken && !call?.cookieOnly) headers.Authorization = `Bearer ${sessionToken}`
     return headers
   }
 
@@ -122,7 +169,7 @@ export function createApiService(option: ApiServiceOption = {}): DataSource {
 
   async function send(call: Call, signal?: AbortSignal): Promise<RawResponse> {
     const { method, body } = call
-    const headers = headersOf(method, body, call.contentType)
+    const headers = headersOf(method, body, call.contentType, call)
     const payload = plainBodyOf(body)
     const response = await fetchFn(call.fullUrl, { method, headers, body: payload, credentials: 'include', signal })
     const requestId = response.headers.get('x-request-id') ?? undefined
@@ -218,7 +265,23 @@ export function createApiService(option: ApiServiceOption = {}): DataSource {
       if (signal?.aborted || error === abortAllReason) throw abortError(error)
       throw new AppError({ code: ERROR_CODE.network, kind: 'network', message: 'network error', cause: error })
     }
+    // Any 401 ends the token's use: the next sign-in starts clean.
+    if (response.status === HTTP_STATUS.unauthorized) forgetToken()
     return readResponse<T>(response, call.binary)
+  }
+
+  // After a sign-in or register answer: decides between cookie mode and token mode.
+  async function settleToken(result: unknown) {
+    const token = sessionTokenOf(result)
+    if (result && typeof result === 'object') delete (result as { sessionToken?: unknown }).sessionToken
+    if (!token) return forgetToken()
+    try {
+      const check = await send({ method: 'GET', fullUrl: buildUrl(baseUrl!, API_PATH.session), body: undefined, binary: false, background: true, cookieOnly: true })
+      if (check.status === HTTP_STATUS.unauthorized) keepToken(token)
+      else forgetToken()
+    } catch {
+      forgetToken()
+    }
   }
 
   return {
@@ -241,7 +304,12 @@ export function createApiService(option: ApiServiceOption = {}): DataSource {
       const sharedRead = method === 'GET' && body === undefined
       const release = sharedRead ? undefined : hold(background)
       try {
-        return await exchange<T>({ method, fullUrl, body, contentType: requestOption.contentType, binary, background }, signal)
+        const path = pathOf(url)
+        const askToken = method === 'POST' && (path === API_PATH.session || path === API_PATH.account)
+        const result = await exchange<T>({ method, fullUrl, body, contentType: requestOption.contentType, binary, background, askToken, cookieOnly: askToken }, signal)
+        if (askToken) await settleToken(result)
+        else if (method === 'DELETE' && path === API_PATH.session) forgetToken()
+        return result
       } finally {
         release?.()
       }

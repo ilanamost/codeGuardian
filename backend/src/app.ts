@@ -63,7 +63,7 @@ export type AppOption = {
 }
 
 // `production` is optional so tests that do not care get development cookies.
-export type AppRuntimeConfig = Pick<AppConfig, 'frontendUrl' | 'enableTestRoute'> & Partial<Pick<AppConfig, 'production' | 'githubOAuth' | 'cookieSameSite'>>
+export type AppRuntimeConfig = Pick<AppConfig, 'frontendUrl' | 'enableTestRoute'> & Partial<Pick<AppConfig, 'production' | 'githubOAuth' | 'cookieSameSite' | 'sessionTokenFallback'>>
 
 // Exported without listening so Supertest can mount it directly. The frontend URL comes from
 // the server configuration (`config.ts`), never from a default here.
@@ -75,6 +75,8 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
   const analyzer = option.analyzer ?? createStubAnalyzer()
   const now = option.now ?? Date.now
   const cookie = { production: config.production ?? false, sameSite: config.cookieSameSite }
+  // Plan 047: off unless the config turns it on.
+  const tokenFallback = config.sessionTokenFallback ?? false
   const frontendOrigin = new URL(config.frontendUrl).origin
   const log = createSecurityLog(option.securityLogger ?? console)
   const limiter = createLoginLimiter(now)
@@ -107,7 +109,7 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
     origin: (origin, callback) => callback(null, origin === frontendOrigin ? frontendOrigin : false),
     credentials: true,
     methods: ['GET', 'HEAD', ...STATE_CHANGING_METHOD_LIST],
-    allowedHeaders: [HEADER.contentType, HEADER.csrf],
+    allowedHeaders: [HEADER.contentType, HEADER.csrf, HEADER.authorization, HEADER.sessionMode],
     // Not a CORS-safelisted header, so the login page could not read the wait time otherwise.
     exposedHeaders: [HEADER.retryAfter]
   }))
@@ -132,7 +134,7 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
     res.json({ status: HEALTH_STATUS_OK, analyzer: analyzer.kind ?? AnalyzerKind.Stub, githubOAuth: githubSignInEnabled })
   })
 
-  app.use(API_PATH.session, createSessionRouter(sessionService, accountService, cookie, log))
+  app.use(API_PATH.session, createSessionRouter(sessionService, accountService, cookie, log, tokenFallback))
   if (config.githubOAuth) {
     const githubSignInClient = option.githubSignInClient ?? createGithubSignInClient({ fetch: globalThis.fetch, ...config.githubOAuth })
     const githubSignInService = createGithubSignInService(
@@ -152,7 +154,7 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
   ))
   app.use(API_PATH.settings, createSettingsRouter(createSettingsService(store)))
   app.use(API_PATH.supportRequest, createSupportRouter(createSupportService(store, now, { limiter: supportLimiter })))
-  app.use(API_PATH.account, createAccountRouter(accountService, cookie))
+  app.use(API_PATH.account, createAccountRouter(accountService, cookie, tokenFallback))
   if (config.enableTestRoute) {
     app.use(API_PATH.test, createTestRouter(createTestService(store, [limiter, supportLimiter, githubSignInLimiter, reviewService])))
   }

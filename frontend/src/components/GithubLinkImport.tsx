@@ -76,7 +76,7 @@ export default function GithubLinkImport() {
               aria-invalid={Boolean(error)}
               aria-describedby={error ? `${errorId} ${hintId}` : hintId}
               onChange={(event) => change(event.target.value)}
-              className="w-full rounded-md border border-input-border bg-surface py-2 pr-3 pl-9 text-sm outline-none focus:outline-2 focus:outline-primary aria-invalid:border-critical"
+              className="w-full rounded-md border border-input-border bg-surface py-2 pr-3 pl-9 text-base sm:text-sm outline-none focus:outline-2 focus:outline-primary aria-invalid:border-critical"
             />
           </div>
           {error && (

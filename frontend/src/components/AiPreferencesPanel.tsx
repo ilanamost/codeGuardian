@@ -63,7 +63,7 @@ export default function AiPreferencesPanel() {
           id="default-language"
           value={settings.language}
           onChange={(event) => update({ language: event.target.value })}
-          className="max-w-xs rounded-md border border-input-border bg-surface px-3 py-2 text-sm"
+          className="max-w-xs rounded-md border border-input-border bg-surface px-3 py-2 text-base sm:text-sm"
         >
           <option value={autoLanguage}>Auto-detect</option>
           {languageList.map((item) => (

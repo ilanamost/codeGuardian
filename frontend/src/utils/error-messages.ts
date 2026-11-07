@@ -448,6 +448,9 @@ export const SESSION_ERROR_MESSAGE = {
   signInFailed: 'Incorrect user name or password.',
   registerConflict: 'This user name or email cannot be used.',
   sessionEnded: 'Your session has ended. Sign in again.',
+  // Plan 047: a 401 right after a successful sign-in, so the browser dropped the session cookie.
+  cookieBlocked:
+    'Sign-in was accepted, but your browser did not keep the session. Allow cookies for this site, or open the app on its own address, then sign in again.',
   rateLimited: (second?: number) => {
     if (!second) return 'Too many attempts. Wait a few minutes and try again.'
     const minute = Math.ceil(second / 60)

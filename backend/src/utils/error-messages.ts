@@ -71,6 +71,7 @@ export const ERROR_MESSAGE = {
   githubOAuthPartial: `${CONFIG_KEY.githubOAuthClientId}, ${CONFIG_KEY.githubOAuthClientSecret} and ${CONFIG_KEY.githubOAuthRedirectUrl} must all be set, or all be blank`,
   githubOAuthRedirectInvalid: `${CONFIG_KEY.githubOAuthRedirectUrl} must be an http or https URL`,
   // Plan 042. Names the setting, never its value.
+  sessionTokenFallbackInvalid: `${CONFIG_KEY.sessionTokenFallback} must be one of: on, off`,
   cookieSameSiteInvalid: `${CONFIG_KEY.cookieSameSite} must be one of: lax, strict, none`,
   cookieSameSiteNeedProduction: `${CONFIG_KEY.cookieSameSite} can use the none option only when ${CONFIG_KEY.nodeEnv} is production`,
   // Plan 043. Names the setting, never its value.

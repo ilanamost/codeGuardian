@@ -1,5 +1,5 @@
 import { test as base, expect, type APIRequestContext, type Page, type Route } from '@playwright/test'
-import { API_PATH, CSRF_HEADER, SNIPPET_SOURCE_TYPE } from '../../src/lib/api.constants'
+import { API_PATH, CSRF_HEADER, SESSION_MODE_HEADER, SNIPPET_SOURCE_TYPE } from '../../src/lib/api.constants'
 import { unfinishedStatusList } from '../../src/models/review.model'
 import type { ReviewStatus } from '../../src/models/dto'
 import { BACKEND_URL, DEMO_PASSWORD, DEMO_USERNAME, FAKE_GITHUB_USER, FRONTEND_URL, TEST_RESET_PATH } from './e2e.constants'
@@ -78,7 +78,7 @@ export function apiRoute(path: string): string {
 const corsHeader = {
   'Access-Control-Allow-Origin': FRONTEND_URL,
   'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Allow-Headers': `Content-Type, ${CSRF_HEADER.name}`,
+  'Access-Control-Allow-Headers': `Content-Type, ${CSRF_HEADER.name}, Authorization, ${SESSION_MODE_HEADER.name}`,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
 }
 
