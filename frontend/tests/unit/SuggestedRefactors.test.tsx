@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from '../../src/App'
 import CodeEditor from '../../src/components/CodeEditor'
-import { editorHorizontalScrollbarSize, scrollbarSize } from '../../src/lib/config'
+import { editorScrollbarSize, scrollbarSize } from '../../src/lib/config'
 import { sampleReview } from '../utils/sampleData'
 import { renderWithStore, renderWithStoreSettled } from '../utils/renderWithStore'
 
@@ -120,14 +120,14 @@ describe('Scrollbar style', () => {
     expect(variables).toMatch(new RegExp(`--scrollbar-size:\\s*${scrollbarSize}px`))
   })
 
-  // Plan 021: the horizontal editor scrollbar is wide (16px below md; jsdom has no matchMedia, so
-  // it renders as below md), the vertical one keeps the shared thin size.
-  it('passes the shared vertical and the wide horizontal scrollbar size to the Monaco options', async () => {
+  // Plans 021 and 050: both editor scrollbars are wide (16px below md; jsdom has no matchMedia, so
+  // it renders as below md), the global thin size stays for the page's own scrollbars.
+  it('passes the one wide editor scrollbar size to the Monaco options for both bars', async () => {
     renderWithStore(<CodeEditor value="const a = 1" language="TypeScript" />)
 
     expect(editorOptionList.at(-1)).toMatchObject({
       wordWrap: 'off',
-      scrollbar: { verticalScrollbarSize: scrollbarSize, horizontalScrollbarSize: editorHorizontalScrollbarSize.base }
+      scrollbar: { verticalScrollbarSize: editorScrollbarSize.base, horizontalScrollbarSize: editorScrollbarSize.base }
     })
   })
 

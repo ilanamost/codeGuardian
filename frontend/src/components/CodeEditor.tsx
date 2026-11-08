@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import Editor, { type Monaco, type OnMount } from '@monaco-editor/react'
 import { Upload } from 'lucide-react'
 import { toast } from 'sonner'
-import { editorHorizontalScrollbarSize, scrollbarSize } from '../lib/config'
+import { editorScrollbarSize } from '../lib/config'
 import { useSettings } from '../lib/useSettings'
 import { useBreakpoint } from '../lib/useBreakpoint'
 import { fontSizePx } from '../lib/settings.constants'
@@ -64,6 +64,12 @@ type DecorationCollection = ReturnType<EditorInstance['createDecorationsCollecti
 const sliderColorClass =
   '[&_.editor-scrollable>.scrollbar]:[--vscode-scrollbarSlider-background:var(--editor-scrollbar-thumb)] [&_.editor-scrollable>.scrollbar]:[--vscode-scrollbarSlider-hoverBackground:var(--editor-scrollbar-thumb-hover)] [&_.editor-scrollable>.scrollbar]:[--vscode-scrollbarSlider-activeBackground:var(--editor-scrollbar-thumb-hover)] [&_.editor-scrollable>.scrollbar.horizontal]:[--vscode-scrollbar-background:var(--editor-scrollbar-track)] max-md:[&_.editor-scrollable>.scrollbar.horizontal]:opacity-100! max-md:[&_.editor-scrollable>.scrollbar.horizontal]:z-11! max-md:[&_.editor-scrollable>.scrollbar.horizontal]:visible! max-md:[&_.editor-scrollable>.scrollbar.horizontal.invisible>.slider]:hidden'
 
+// Plan 050: with fixedOverflowWidgets the hover is drawn at the window level (position: fixed,
+// z-index 11 from Monaco), where the phone's bottom navigation (z-20) would cover the end of a long
+// message that opens below the editor. It is raised above the navigation (z-30) and stays above
+// the page's own layers, which stop at z-20.
+const widgetLayerClass = '[&_.overflowingOverlayWidgets>*]:z-30! [&_.editor-scrollable>.scrollbar]:touch-none'
+
 // Monaco's built-in dark theme, used until the highlighting is ready, and if it cannot load.
 const MONACO_THEME_FALLBACK = 'vs-dark'
 
@@ -84,6 +90,7 @@ export default function CodeEditor({
   finding
 }: Props) {
   const isTabletUp = useBreakpoint('md')
+  const editorSize = isTabletUp ? editorScrollbarSize.md : editorScrollbarSize.base
   const { settings } = useSettings()
   const dispatch = useAppDispatch()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -246,7 +253,7 @@ export default function CodeEditor({
     <section
       onDragOverCapture={handleDragOver}
       onDropCapture={handleDrop}
-      className={`flex h-[42dvh] min-h-64 w-full min-w-0 flex-col md:h-[60dvh] md:min-h-80 lg:h-auto lg:min-h-0 lg:flex-1 overflow-hidden rounded-md bg-code-bg text-code-text ${sliderColorClass}`}
+      className={`flex h-[42dvh] min-h-64 w-full min-w-0 flex-col md:h-[60dvh] md:min-h-80 lg:h-auto lg:min-h-0 lg:flex-1 overflow-hidden rounded-md bg-code-bg text-code-text ${sliderColorClass} ${widgetLayerClass}`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <h2 data-testid="editor-title" title={title} className="min-w-0 truncate text-sm font-semibold text-white">
@@ -337,10 +344,13 @@ export default function CodeEditor({
           glyphMargin: finding !== undefined,
           fontSize: fontSizePx[settings.editorFontSize] + (isTabletUp ? 0 : 2),
           scrollBeyondLastColumn: 3,
+          // Plan 050: widgets (hover, suggest) are drawn with position: fixed, outside the editor box
+          // and its overflow-hidden section, so a long message is not cut.
+          fixedOverflowWidgets: true,
           scrollbar: {
             horizontal: 'visible',
-            verticalScrollbarSize: scrollbarSize,
-            horizontalScrollbarSize: isTabletUp ? editorHorizontalScrollbarSize.md : editorHorizontalScrollbarSize.base
+            verticalScrollbarSize: editorSize,
+            horizontalScrollbarSize: editorSize
           }
         }}
       />

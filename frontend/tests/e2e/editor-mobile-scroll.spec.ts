@@ -244,3 +244,49 @@ test.describe('iPhone SE, typing a long line', () => {
     await expectScrollable(page)
   })
 })
+
+// Plan 050: the vertical bar is as thick as the horizontal one (16 px below md), so a finger can
+// drag it down to the last line of a long file. The bar needs touch-action: none, or the browser
+// takes the vertical drag for a page pan after the first move and the slider barely moves.
+const tallCode = `${Array.from({ length: 120 }, (_, i) => `const row${i} = ${i}`).join('\n')}\nconst lastRow = 'the end'`
+const verticalBar = (page: Page) => editor(page).locator('.editor-scrollable > .scrollbar.vertical')
+
+async function touchDragDown(page: Page, from: { x: number; y: number }, dy: number) {
+  const cdp = await page.context().newCDPSession(page)
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [from] })
+  for (let step = 1; step <= 8; step++) {
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: from.x, y: from.y + (dy * step) / 8 }] })
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.detach()
+}
+
+for (const phone of [
+  { name: 'iPhone 12', width: 390, height: 844 },
+  { name: 'small phone', width: 320, height: 568 }
+]) {
+  test.describe(`${phone.name} vertical scrollbar`, () => {
+    test.use({ viewport: { width: phone.width, height: phone.height }, isMobile: true, hasTouch: true, userAgent: iphoneUserAgent })
+
+    test('dragging the 16 px vertical bar reaches the last line', async ({ page }) => {
+      await page.goto('/review/new')
+      await expect(page.locator('.monaco-editor .view-lines').first()).toBeVisible(MONACO_LOAD)
+      await page.getByLabel(EDITOR_TEXT.fileInput).setInputFiles({ name: 'tall.ts', mimeType: 'text/plain', buffer: Buffer.from(tallCode) })
+      await expect(page.getByTestId('editor-title')).toHaveText('tall.ts')
+      await editor(page).evaluate((element) => element.closest('section')?.scrollIntoView({ block: 'nearest' }))
+
+      const bar = verticalBar(page)
+      const thumb = bar.locator('.slider')
+      await expect(thumb).toBeVisible()
+      await expect(bar).toHaveCSS('opacity', '1')
+      const barBox = await bar.boundingBox()
+      expect(barBox!.width).toBeGreaterThanOrEqual(16)
+      expect(await editor(page).locator('.view-lines').first().textContent()).not.toContain('lastRow')
+
+      // Drag the slider from where it is to the bottom of the bar.
+      const from = await center(thumb)
+      await touchDragDown(page, from, barBox!.y + barBox!.height - from.y + 40)
+      await expect(editor(page).locator('.view-lines').first()).toContainText('lastRow')
+    })
+  })
+}
