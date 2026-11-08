@@ -58,6 +58,8 @@ In production both come from GitHub **repository variables**, not from a file: S
 | `GITHUB_OAUTH_CLIENT_ID` | no (all three or none) | Client ID of your GitHub OAuth App ([section 4](#4-github-oauth-app-for-production)). | No |
 | `GITHUB_OAUTH_CLIENT_SECRET` | no (all three or none) | Client secret of that OAuth App; shown once on GitHub. | **Yes** |
 | `GITHUB_OAUTH_REDIRECT_URL` | no (all three or none) | `https://<api-host>/api/auth/github/callback`, identical to the callback URL registered on GitHub. | No |
+| `GITHUB_API_TOKEN` | no (recommended in production) | A GitHub personal access token the backend sends on its own calls to `api.github.com` (the Integration wizard and the link import). It raises GitHub's limit from 60 to 5000 requests an hour for the whole server. Create a fine-grained token with no repository permissions (public data only), or a classic token with no scopes. Blank = no token. It is only trimmed: never logged, returned or put in an error. If GitHub refuses it (401) the call is retried once without it and one warning line names the setting. | **Yes** |
+| `TRUST_PROXY` | no (default off) | Number of proxy hops in front of the API: a whole number, blank or `0` = off. Use `1` on Render (one proxy). Makes the per-address limits (sign-in, sign-up, GitHub sign-in) use the real client address instead of the proxy's. Too high lets a client fake its address; too low keeps one shared bucket. Any other value stops the start (the message names the variable, never the value). | No |
 | `ENABLE_TEST_ROUTE`, `GITHUB_FAKE`, `GITHUB_OAUTH_FAKE`, `TEST_DATABASE_URL` | never in production | Test-only flags for the e2e suite. Do not set them on a deployed backend. | No |
 
 The templates `backend/env.production.example` and `backend/env.development.example` list every variable the code reads (including the optional `ANTHROPIC_MODEL`, blank = default), each with a "secret or not" comment. The test-only flags are deliberately left out.
@@ -96,7 +98,7 @@ Written for Render's free tier; every step has an equivalent on Railway, Fly.io 
    - **Build Command**: `npm install --include=dev` (the server runs through `tsx`, a dev dependency, so dev dependencies must be installed even though `NODE_ENV=production`)
    - **Start Command**: `npm run db:setup && npx tsx src/index.ts` (applies the idempotent schema, then starts the API). Do not use `npm start` on a host: its script passes Node's `--env-file` for a base env file that does not exist on the server, which fails.
    - **Health Check Path**: `/api/health`
-3. **Environment variables** (Environment tab): `NODE_ENV=production`, `FRONTEND_URL=https://<user>.github.io/<repo>` (a root site: `https://<user>.github.io`), `COOKIE_SAMESITE=none`, `DATABASE_URL=<Internal Database URL>`; optionally `ANTHROPIC_API_KEY`, and the three `GITHUB_OAUTH_*`. Do not set `PORT` on Render unless you must; it provides one.
+3. **Environment variables** (Environment tab): `NODE_ENV=production`, `FRONTEND_URL=https://<user>.github.io/<repo>` (a root site: `https://<user>.github.io`), `COOKIE_SAMESITE=none`, `DATABASE_URL=<Internal Database URL>`; `TRUST_PROXY=1`; optionally `ANTHROPIC_API_KEY`, `GITHUB_API_TOKEN` (recommended: without it GitHub allows only 60 requests an hour for the whole server and the Integration wizard soon shows "limit is used up"), and the three `GITHUB_OAUTH_*`. Do not set `PORT` on Render unless you must; it provides one.
 4. Deploy. Open `https://<api-host>/api/health`: it answers `{"status":"ok", ...}`. Copy the service URL: it is your `VITE_API_URL`.
 5. **Free-tier behaviour.** A free web service sleeps after idle time; the first request takes tens of seconds. A free database may expire after a period; check Render's current terms and back it up if the data matters.
 6. **Proxy note.** The backend does not set `trust proxy`, so behind the host's proxy the per-IP rate limits (registration, GitHub import) see one shared address. Expect those limits to be shared by all visitors until that changes.
@@ -154,6 +156,8 @@ Examples:
   | User site or custom domain | `https://<user>.github.io` or `https://app.example.com` | `/` |
 - [ ] Pages source set to **GitHub Actions**.
 - [ ] (Optional) production GitHub OAuth App created, three `GITHUB_OAUTH_*` set on the backend; the callback URL is the backend address.
+- [ ] `TRUST_PROXY=1` set on the backend (Render), and `GITHUB_API_TOKEN` set (token with no scopes, created on GitHub; never in git or in a `VITE_*` variable).
+- [ ] On a phone: Integration wizard, connect by user name, pick a repository and import a file; no "limit is used up" message.
 - [ ] (If GitHub sign-in is on) click "Continue with GitHub" and check you land inside the app, not on a 404.
 - [ ] Workflow run is green (Actions tab); the Pages URL loads the app.
 - [ ] Reload a deep link (for example `/<repo>/history`): the app loads, no 404.
@@ -175,6 +179,8 @@ Examples:
 | Reloading a deep link shows GitHub's 404 page | `404.html` missing from the build or the base path is wrong | Check `frontend/dist/404.html` exists in the artifact; fix `VITE_BASE_PATH`. |
 | After "Continue with GitHub" you land on a 404 or the wrong page | `FRONTEND_URL` path and `VITE_BASE_PATH` disagree (for example `FRONTEND_URL` has no `/<repo>` on a project page) (section 8) | Set `FRONTEND_URL=https://<user>.github.io/<repo>` and `VITE_BASE_PATH=/<repo>/`; redeploy the backend (and re-run the workflow if you changed the base path). |
 | GitHub says "redirect_uri mismatch" | `GITHUB_OAUTH_REDIRECT_URL` differs from the OAuth App callback | Make them identical. |
+| The Integration wizard or the link import says "GitHub's limit of requests without sign-in is used up. Try again in an hour." | GitHub allows 60 requests an hour for the server's address when no token is sent, shared by all visitors; or `GITHUB_API_TOKEN` is set but GitHub refused it (revoked, expired, mistyped), so calls fall back to 60 an hour (the backend log has one warning line naming `GITHUB_API_TOKEN`), or the 5000-an-hour limit of the token is used up | Set `GITHUB_API_TOKEN` (create a token with no scopes on GitHub) and redeploy; if it is set, replace the token; otherwise wait until the time in the answer (`details.resetAt`). |
+| Sign-in or registration says "Too many attempts" for every visitor | Behind a proxy, all clients share the proxy's address, so one bucket fills for everyone | Set `TRUST_PROXY=1` on Render and redeploy. |
 | First request takes ~30 s, then works | Free host was asleep | Expected on free tiers. |
 | Data gone after a restart | `DATABASE_URL` blank, so the in-memory store is used | Set `DATABASE_URL`. |
 | Workflow fails at "Build" | A bundle error, or an invalid `VITE_BASE_PATH` (the build stops with a message naming it) | Open the log; run the same command locally in `frontend/`. |

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { AppError, notFoundError, payloadTooLargeError, rateLimitedError, upstreamError, upstreamTimeoutError } from './error.js'
-import { GITHUB_API, GITHUB_CONTENT_TYPE, GITHUB_PATTERN, TIMEOUT_ERROR_NAME, TIME } from '../utils/constants.js'
+import { GITHUB_API, GITHUB_CONTENT_TYPE, GITHUB_PATTERN, LOG_MESSAGE, LOG_OPERATION, LogLevel, TIMEOUT_ERROR_NAME, TIME } from '../utils/constants.js'
 import { ImportLimit, SkipReason } from '../utils/domain.js'
 import { ERROR_MESSAGE } from '../utils/error-messages.js'
 import { HttpStatus, REDIRECT_MAX, REDIRECT_MIN } from '../utils/http-status.js'
@@ -15,8 +15,9 @@ import { LIMIT } from '../utils/limits.js'
 //   URL's origin is checked again before the call. No URL from a response (`download_url`,
 //   `html_url`, `clone_url`, `avatar_url`, ...) is ever read: the response schemas below do not
 //   even keep those fields.
-// - No credentials are sent (the optional `authorization` is for GitHub OAuth later and is
-//   undefined today), and redirects are not followed: any 3xx is a 502.
+// - No cookie or credentials mode is used. The only credential is the optional `authorization`
+//   (plan 049: `Bearer <GITHUB_API_TOKEN>`), which goes only to the constant origin above; a
+//   GitHub 401 retries that call once without it. Redirects are not followed: any 3xx is a 502.
 // - The `Content-Type` and `Content-Length` are checked before the body is read, and the body
 //   is read through a byte counter that stops at the cap.
 // - Every call has its own timeout and also stops at the request's overall deadline.
@@ -29,8 +30,10 @@ export type GithubClientOption = {
   fetch: FetchLike
   callTimeoutMs?: number
   now?: () => number
-  // The `Authorization` header value; undefined today (no token, public data only, plan 030).
+  // The `Authorization` header value (plan 049: `Bearer <GITHUB_API_TOKEN>`); undefined sends none.
   authorization?: string
+  // Where the one warning line of a refused token goes (a JSON line, never the token); defaults to the console.
+  warn?: (line: string) => void
 }
 
 // The overall deadline of one import (or one wizard request), shared by all its calls.
@@ -197,6 +200,7 @@ export function createGithubClient(option: GithubClientOption): GithubClient {
   const callTimeoutMs = option.callTimeoutMs ?? LIMIT.github.callTimeoutMs
   const now = option.now ?? Date.now
   const authorization = option.authorization
+  const warn = option.warn ?? ((line: string) => console.warn(line))
 
   function rateLimited(response: Response): AppError {
     const reset = headerInteger(response, GITHUB_API.headerName.rateReset)
@@ -230,18 +234,27 @@ export function createGithubClient(option: GithubClientOption): GithubClient {
     const callSignal = AbortSignal.timeout(callTimeoutMs)
     const signal = AbortSignal.any([budget.signal, callSignal])
     try {
-      const response = await raceAbort(fetchFn(url.href, {
+      const send = (auth: string | undefined) => raceAbort(fetchFn(url.href, {
         method: 'GET',
         headers: {
           [GITHUB_API.headerName.accept]: GITHUB_API.header.accept,
           [GITHUB_API.headerName.apiVersion]: GITHUB_API.header.apiVersion,
           [GITHUB_API.headerName.userAgent]: GITHUB_API.header.userAgent,
-          ...(authorization === undefined ? {} : { [GITHUB_API.headerName.authorization]: authorization })
+          ...(auth === undefined ? {} : { [GITHUB_API.headerName.authorization]: auth })
         },
         redirect: 'manual',
         credentials: 'omit',
         signal
       }), signal)
+
+      let response = await send(authorization)
+      // A token GitHub refuses (revoked, expired, mistyped): once, without it, under the same
+      // timeouts, and one warning line that names the setting and never the token (plan 049).
+      if (authorization !== undefined && response.status === HttpStatus.Unauthorized) {
+        discard(response)
+        warn(JSON.stringify({ level: LogLevel.Warn, operation: LOG_OPERATION.githubImport, message: LOG_MESSAGE.githubTokenRefused }))
+        response = await send(undefined)
+      }
 
       if (requestOption.emptyOn !== undefined && response.status === requestOption.emptyOn) {
         discard(response)

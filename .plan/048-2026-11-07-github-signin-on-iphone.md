@@ -1,6 +1,6 @@
 # Plan 048: "Continue with GitHub" sign-in on iPhone
 
-Status: active (approved 2026-11-07; Q1 = A the login page with no message, Q2 = A URL fragment and Q3 = A 60 s in memory, both taken as the recommended answers)
+Status: done (marked done at the owner's request 2026-11-08; the real-iPhone check, Validation 11, was not recorded as passed; approved 2026-11-07; Q1 = A the login page with no message, Q2 = A URL fragment and Q3 = A 60 s in memory, both taken as the recommended answers)
 Owner: orchestrator (backend and frontend agents implement)
 Last updated: 2026-11-07
 Branch: feat/github-signin-on-iphone

@@ -18,8 +18,8 @@ function publicOperationList(): string[] {
 }
 
 describe('contract helper', () => {
-  it('is on contract version 0.19.0', () => {
-    expect((contract.info as { version: string }).version).toBe('0.19.0')
+  it('is on contract version 0.20.0', () => {
+    expect((contract.info as { version: string }).version).toBe('0.20.0')
   })
 
   it('requires the session cookie globally, with only the public routes marked security: [] (plan 028)', () => {
