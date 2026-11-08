@@ -30,7 +30,7 @@ function usernameError(value: string): string | undefined {
 }
 
 const connectButtonClass =
-  'shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50'
+  'shrink-0 rounded-md bg-primary px-3 py-1.5 text-sm max-md:min-h-11 font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50'
 
 export default function GithubConnectCard({ account, connecting = false, switching = false, onConnect, onSwitch }: Props) {
   const [username, setUsername] = useState('')
@@ -76,7 +76,7 @@ export default function GithubConnectCard({ account, connecting = false, switchi
             type="button"
             onClick={onSwitch}
             disabled={switching}
-            className="text-xs font-medium text-primary hover:text-primary-hover disabled:opacity-60"
+            className="text-xs font-medium text-primary hover:text-primary-hover disabled:opacity-60 max-md:min-h-11 max-md:min-w-11 max-md:px-2"
           >
             {GITHUB_TEXT.switchAccount}
           </button>

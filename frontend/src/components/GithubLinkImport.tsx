@@ -88,7 +88,7 @@ export default function GithubLinkImport() {
         <button
           type="submit"
           disabled={importing}
-          className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-md bg-primary px-4 py-2 text-sm max-md:min-h-11 font-medium text-white hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {importing ? GITHUB_LINK_TEXT.importing : GITHUB_LINK_TEXT.import}
         </button>

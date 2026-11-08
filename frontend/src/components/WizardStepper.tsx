@@ -28,7 +28,7 @@ export default function WizardStepper({ stepList, current, onSelect }: Props) {
         return (
           <li key={step.id} aria-current={isCurrent ? 'step' : undefined} className="flex items-center gap-3">
             {isDone ? (
-              <button type="button" aria-label={step.label} onClick={() => onSelect(step.id)} className="flex items-center gap-3 text-sm text-primary hover:underline">
+              <button type="button" aria-label={step.label} onClick={() => onSelect(step.id)} className="flex items-center gap-3 text-sm text-primary hover:underline max-md:min-h-11 max-md:min-w-11">
                 {circle}
                 <span className={labelVisibility}>{step.label}</span>
               </button>
