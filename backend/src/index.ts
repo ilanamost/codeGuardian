@@ -5,8 +5,7 @@ import { createApp } from './app.js'
 import { createAnalyzer } from './analyzer/create-analyzer.js'
 import { loadConfigOrExit } from './config.js'
 import { DatabaseStartupError } from './lib/db-error.js'
-import { createGithubClient } from './lib/github-fetch.js'
-import { createFakeGithubFetch } from './lib/github-fake.js'
+import { createConfiguredGithubClient } from './lib/github-client-of.js'
 import { createFakeGithubSignInClient, FAKE_SIGNIN_PROFILE } from './lib/github-signin-fake.js'
 import { createReviewService } from './service/review.service.js'
 import { createStore } from './store/create-store.js'
@@ -45,8 +44,9 @@ if (analyzer.kind === AnalyzerKind.Claude) {
 }
 // One review service for the routes and the resume below, so they share the quota and the cap.
 const reviewService = createReviewService(store, analyzer, Date.now)
-// The fake GitHub only when the test-only GITHUB_FAKE flag is on; the real client otherwise.
-const githubClient = config.githubFake ? createGithubClient({ fetch: createFakeGithubFetch() }) : undefined
+// The fake GitHub when the test-only GITHUB_FAKE flag is on (it ignores the token); otherwise the
+// real client, which sends GITHUB_API_TOKEN (plan 049) to api.github.com only.
+const githubClient = createConfiguredGithubClient(config)
 // The fake GitHub sign-in client only when GITHUB_OAUTH_FAKE is on (and the three settings are set).
 const githubSignInClient = config.githubOAuthFake ? createFakeGithubSignInClient(FAKE_SIGNIN_PROFILE) : undefined
 const server = createApp(config, { store, analyzer, reviewService, githubClient, githubSignInClient }).listen(config.port, () => {

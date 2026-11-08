@@ -34,7 +34,7 @@ import { createSessionService } from './service/session.service.js'
 import { createSettingsService } from './service/settings.service.js'
 import { createSupportService } from './service/support.service.js'
 import { createTestService } from './service/test.service.js'
-import { API_PATH, DEFAULT_CHARSET, HEADER, HEALTH_STATUS_OK, ROUTE, SESSION_CODE, STATE_CHANGING_METHOD_LIST } from './utils/constants.js'
+import { API_PATH, DEFAULT_CHARSET, EXPRESS_SETTING, HEADER, HEALTH_STATUS_OK, ROUTE, SESSION_CODE, STATE_CHANGING_METHOD_LIST } from './utils/constants.js'
 import { AnalyzerKind } from './utils/domain.js'
 import { ERROR_MESSAGE } from './utils/error-messages.js'
 import { LIMIT } from './utils/limits.js'
@@ -64,7 +64,7 @@ export type AppOption = {
 }
 
 // `production` is optional so tests that do not care get development cookies.
-export type AppRuntimeConfig = Pick<AppConfig, 'frontendUrl' | 'enableTestRoute'> & Partial<Pick<AppConfig, 'production' | 'githubOAuth' | 'cookieSameSite' | 'sessionTokenFallback'>>
+export type AppRuntimeConfig = Pick<AppConfig, 'frontendUrl' | 'enableTestRoute'> & Partial<Pick<AppConfig, 'production' | 'githubOAuth' | 'cookieSameSite' | 'sessionTokenFallback' | 'trustProxy'>>
 
 // Exported without listening so Supertest can mount it directly. The frontend URL comes from
 // the server configuration (`config.ts`), never from a default here.
@@ -107,6 +107,9 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
 
   const app = express()
   app.disable(HEADER.poweredBy)
+  // Plan 049: the number of proxy hops whose X-Forwarded-For is trusted, so `req.ip` (the key of the
+  // per-address limits) is the real client. Not set at all when off: the header is then ignored.
+  if (config.trustProxy) app.set(EXPRESS_SETTING.trustProxy, config.trustProxy)
 
   // The request id comes first so every refusal (403, 401, 400, 413) carries it too.
   app.use(attachRequestId)

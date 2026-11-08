@@ -77,7 +77,14 @@ export const CONFIG_KEY = {
   cookieSameSite: 'COOKIE_SAMESITE',
   // Optional (plan 047): on|off (default off). When on, sign-in and register return the session
   // id as `sessionToken` to a client that sends `X-Session-Mode: token`. Not a secret.
-  sessionTokenFallback: 'SESSION_TOKEN_FALLBACK'
+  sessionTokenFallback: 'SESSION_TOKEN_FALLBACK',
+  // Optional (plan 049): a GitHub token the backend sends on its own calls to api.github.com
+  // (5000 requests an hour instead of 60). A SECRET: read from the environment only, and never
+  // logged, returned or put in an error.
+  githubApiToken: 'GITHUB_API_TOKEN',
+  // Optional (plan 049): the number of proxy hops in front of the API (blank or 0 = off, 1 on
+  // Render). Not a secret.
+  trustProxy: 'TRUST_PROXY'
 } as const
 
 // Plan 047: the bearer-token session fallback. The accepted spellings of the setting, the one
@@ -88,6 +95,12 @@ export const SESSION_TOKEN = {
   modeValue: 'token',
   bearerPattern: /^Bearer(?:\s+(\S*))?$/i
 } as const
+
+// The Express setting TRUST_PROXY sets (plan 049).
+export const EXPRESS_SETTING = { trustProxy: 'trust proxy' } as const
+
+// Plan 049: TRUST_PROXY is a whole number of hops, 1 to 2 digits (no sign, no decimal point).
+export const TRUST_PROXY_PATTERN = /^[0-9]{1,2}$/
 
 // The Claude model reviews use when ANTHROPIC_MODEL is not set (plan 039, Open Question 1).
 export const ANALYZER_MODEL_DEFAULT = 'claude-sonnet-5-5'
@@ -271,6 +284,8 @@ export const LOG_MESSAGE = {
   setupSkipped: (variable: string) => `${variable} is not set: no schema to apply (the backend will use the in-memory store)`,
   setupDone: (variable: string) => `schema applied to the database in ${variable}`,
   // Plan 039. No key text, no code, no prompt, no answer in any of these.
+  // Plan 049. Names the setting only, never the token.
+  githubTokenRefused: `GitHub refused ${CONFIG_KEY.githubApiToken}: the call was retried without it (60 requests an hour). Replace the token.`,
   analyzerStub: 'ANTHROPIC_API_KEY not set: reviews use the stub analyzer',
   analyzerClaude: (model: string) => `reviews use the Claude analyzer (model ${model})`,
   analyzerCall: 'AI analysis call finished',
@@ -561,7 +576,7 @@ export const GITHUB_API = {
     retryAfter: 'retry-after',
     // Plan 030: `rel="next"` means more repositories than one page.
     link: 'link',
-    // Never sent today (no token); kept for GitHub OAuth (backlog item 3).
+    // Sent only with GITHUB_API_TOKEN set (plan 049), and only to `origin`.
     authorization: 'authorization'
   },
   jsonType: 'application/json',

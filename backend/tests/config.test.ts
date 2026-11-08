@@ -6,7 +6,7 @@ const required = { PORT: '4000', FRONTEND_URL: 'https://app.example.com' }
 describe('loadConfig', () => {
   it('reads the port and the frontend URL from the environment', () => {
     expect(loadConfig(required))
-      .toEqual({ port: 4000, frontendUrl: 'https://app.example.com', enableTestRoute: false, githubFake: false, production: false, cookieSameSite: 'lax', sessionTokenFallback: false, anthropicModel: 'claude-sonnet-5-5', githubOAuthFake: false })
+      .toEqual({ port: 4000, frontendUrl: 'https://app.example.com', enableTestRoute: false, githubFake: false, production: false, cookieSameSite: 'lax', sessionTokenFallback: false, trustProxy: 0, anthropicModel: 'claude-sonnet-5-5', githubOAuthFake: false })
   })
 
   it('reads NODE_ENV: only exactly production turns production on (plan 028)', () => {

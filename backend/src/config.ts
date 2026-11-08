@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { hasQueryOrFragment } from './lib/frontend-base.js'
-import { ANALYZER_MODEL_DEFAULT, BOOLEAN_TEXT, CONFIG_KEY, COOKIE_SAMESITE, COOKIE_SAMESITE_LIST, type CookieSameSite, FLAG_DEFAULT, LOG_OPERATION, LogLevel, MODEL_ID_PATTERN, PRODUCTION_ENVIRONMENT, SESSION_TOKEN } from './utils/constants.js'
+import { ANALYZER_MODEL_DEFAULT, BOOLEAN_TEXT, CONFIG_KEY, COOKIE_SAMESITE, COOKIE_SAMESITE_LIST, type CookieSameSite, FLAG_DEFAULT, LOG_OPERATION, LogLevel, MODEL_ID_PATTERN, PRODUCTION_ENVIRONMENT, SESSION_TOKEN, TRUST_PROXY_PATTERN } from './utils/constants.js'
 import { ERROR_MESSAGE } from './utils/error-messages.js'
 
 // Server configuration, read once at startup from the environment variables (the values live in
@@ -36,6 +36,10 @@ const configSchema = z.object({
   [CONFIG_KEY.cookieSameSite]: z.string().optional(),
   // Optional (plan 047): on or off; blank means off. The message never contains the value.
   [CONFIG_KEY.sessionTokenFallback]: z.string().optional(),
+  // Optional (plan 049): the whole-number rule is in `trustProxyOf`, so no message can contain the value.
+  [CONFIG_KEY.trustProxy]: z.string().optional(),
+  // Optional (plan 049): only trimmed, never checked or echoed, like the Anthropic key.
+  [CONFIG_KEY.githubApiToken]: z.string().optional(),
   [CONFIG_KEY.anthropicApiKey]: z.string().optional(),
   [CONFIG_KEY.anthropicModel]: z
     .string()
@@ -69,6 +73,11 @@ export type AppConfig = {
   cookieSameSite: CookieSameSite
   // SESSION_TOKEN_FALLBACK (plan 047): sign-in and register may return `sessionToken`. Off unless set to on.
   sessionTokenFallback: boolean
+  // GITHUB_API_TOKEN (plan 049): undefined when unset or blank. Sent only to api.github.com as
+  // `Authorization: Bearer`; never logged, returned or put in an error message.
+  githubApiToken?: string
+  // TRUST_PROXY (plan 049): the number of proxy hops whose X-Forwarded-For is trusted; 0 is off.
+  trustProxy: number
   // ANTHROPIC_API_KEY (plan 039): undefined when unset or blank. Never logged, returned or
   // put in an error message.
   anthropicApiKey?: string
@@ -125,6 +134,15 @@ function sessionTokenFallbackOf(data: z.infer<typeof configSchema>): boolean {
   throw new ConfigError(ERROR_MESSAGE.configInvalid(ERROR_MESSAGE.sessionTokenFallbackInvalid))
 }
 
+// Blank or 0 is off, a whole number of hops (digits only) is that many, anything else stops the
+// server. The message never echoes the value.
+function trustProxyOf(data: z.infer<typeof configSchema>): number {
+  const value = data[CONFIG_KEY.trustProxy]?.trim() ?? ''
+  if (value === '') return 0
+  if (!TRUST_PROXY_PATTERN.test(value)) throw new ConfigError(ERROR_MESSAGE.configInvalid(ERROR_MESSAGE.trustProxyInvalid))
+  return Number(value)
+}
+
 export function loadConfig(environment: Environment): AppConfig {
   const result = configSchema.safeParse(environment)
   if (!result.success) {
@@ -142,6 +160,8 @@ export function loadConfig(environment: Environment): AppConfig {
     production: data[CONFIG_KEY.nodeEnv] === PRODUCTION_ENVIRONMENT,
     cookieSameSite: cookieSameSiteOf(data),
     sessionTokenFallback: sessionTokenFallbackOf(data),
+    githubApiToken: data[CONFIG_KEY.githubApiToken]?.trim() || undefined,
+    trustProxy: trustProxyOf(data),
     anthropicApiKey: data[CONFIG_KEY.anthropicApiKey]?.trim() || undefined,
     anthropicModel: data[CONFIG_KEY.anthropicModel]?.trim() || ANALYZER_MODEL_DEFAULT,
     githubOAuth: githubOAuthOf(data),
