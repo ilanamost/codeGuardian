@@ -16,6 +16,10 @@ export interface SessionService {
   signOut(): Promise<void>
   // Plan 040: GET /api/health `githubOAuth`; a missing value is false.
   githubSignIn(): Promise<boolean>
+  // Plan 048: POST /api/auth/github/exchange. Swaps the one-time code of the GitHub return URL for a
+  // session token, which the data source keeps only when the cookie did not stick (plan 047). The
+  // token is never returned. Any failure is an AppError.
+  exchangeGithubCode(code: string, signal?: AbortSignal): Promise<void>
   // Cancels the data source's requests still in flight (sign-out, session ended; QA D1).
   abortAll(): void
 }
@@ -33,6 +37,9 @@ export function createSessionService(source: DataSource): SessionService {
     },
     async githubSignIn() {
       return githubOAuthOf(await get<unknown>(source, API_PATH.health, { background: true }))
+    },
+    async exchangeGithubCode(code, signal) {
+      await post<unknown>(source, API_PATH.githubExchange, { code }, { background: true, signal })
     },
     abortAll() {
       source.abortAll?.()

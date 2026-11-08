@@ -26,7 +26,9 @@ export const API_PATH = {
   // Plan 040 (contract 0.15.0): GitHub sign-in. The first is a browser navigation (never fetch);
   // the second is POST (start a link) and DELETE (unlink), signed in.
   githubSignIn: '/api/auth/github',
-  githubSignInLink: '/api/auth/github/link'
+  githubSignInLink: '/api/auth/github/link',
+  // Plan 048 (contract 0.19.0): swaps the one-time code from the return URL for a session token.
+  githubExchange: '/api/auth/github/exchange'
 } as const
 
 // The HTTP statuses and error codes the backend answers with.
@@ -60,3 +62,11 @@ export const SESSION_MODE_HEADER = { name: 'X-Session-Mode', value: 'token' } as
 // Where the token is kept in token mode (through storage.service), and its shape (43 URL-safe characters).
 export const SESSION_TOKEN_STORAGE_KEY = 'cr.sessionToken'
 export const SESSION_TOKEN_PATTERN = /^[A-Za-z0-9_-]{43}$/
+
+// Plan 048 (contract 0.19.0): the one-time code GitHub sign-in puts in the URL fragment of the
+// return address (#auth_code=<43 URL-safe characters>), never in the query.
+export const AUTH_CODE_PARAM = 'auth_code'
+export const AUTH_CODE_PATTERN = /^[A-Za-z0-9_-]{43}$/
+
+// How long the app waits for the code exchange before it renders anyway (a cold start, stalled data).
+export const GITHUB_EXCHANGE_TIMEOUT_MS = 15_000

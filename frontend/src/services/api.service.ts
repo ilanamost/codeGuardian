@@ -26,6 +26,8 @@ import { createStorageService, type StorageService } from './storage.service'
 // (the token is dropped, nothing is stored); 401 means the browser blocked it (token mode: the
 // token is kept in storage and sent as `Authorization: Bearer` on every request). The token is
 // cleared on sign-out and on any 401, is never put in a URL, and is never logged or shown.
+// Plan 048 (contract 0.19.0): POST /api/auth/github/exchange (the code of the GitHub return URL)
+// answers with a `sessionToken` too and goes through the same cookie check.
 export type FetchFn = (input: string, init: RequestInit) => Promise<Response>
 
 export interface ApiServiceOption {
@@ -306,8 +308,13 @@ export function createApiService(option: ApiServiceOption = {}): DataSource {
       try {
         const path = pathOf(url)
         const askToken = method === 'POST' && (path === API_PATH.session || path === API_PATH.account)
-        const result = await exchange<T>({ method, fullUrl, body, contentType: requestOption.contentType, binary, background, askToken, cookieOnly: askToken }, signal)
-        if (askToken) await settleToken(result)
+        // Plan 048: the exchange of the GitHub return code answers with a `sessionToken` too; it needs
+        // no X-Session-Mode header, and is sent without a stored bearer.
+        const swapCode = method === 'POST' && path === API_PATH.githubExchange
+        const result = await exchange<T>({ method, fullUrl, body, contentType: requestOption.contentType, binary, background, askToken, cookieOnly: askToken || swapCode }, signal)
+        // A caller that gave up (the exchange timeout) must not get a token from a late answer.
+        if (swapCode && signal?.aborted) throw abortError(signal.reason)
+        if (askToken || swapCode) await settleToken(result)
         else if (method === 'DELETE' && path === API_PATH.session) forgetToken()
         return result
       } finally {

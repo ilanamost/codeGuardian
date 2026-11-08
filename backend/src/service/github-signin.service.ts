@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { conflictError, notFoundError, tooManyAttemptError } from '../lib/error.js'
+import { conflictError, notFoundError, tooManyAttemptError, unauthorizedError } from '../lib/error.js'
 import type { GithubProfile, GithubSignInClient } from '../lib/github-signin-client.js'
 import { newSignIn, parseSignInState, safeReturnTo, SignInMode, stateMatches } from '../lib/github-signin-state.js'
 import type { RateLimiter } from '../lib/rate-limit.js'
+import type { SessionCodeStore } from '../lib/session-code.js'
 import type { SecurityLog } from '../lib/security-log.js'
 import type { Account } from '../model/dto.js'
 import { seedSettings } from '../store/seed.js'
@@ -24,8 +25,9 @@ export type GithubSignInSetting = { clientId: string, redirectUrl: string, front
 // `queryValueMax` characters or undefined (the route drops anything else).
 export type CallbackQuery = { code?: string, state?: string, error?: string }
 
-// Where the browser goes next, and the new session when the callback signed someone in.
-export type CallbackResult = { redirect: string, started?: StartedSession }
+// Where the browser goes next, and the new session when the callback signed someone in. `authCode`
+// (plan 048) is set only with a new session and only when the token fallback is on.
+export type CallbackResult = { redirect: string, started?: StartedSession, authCode?: string }
 
 // The start of a round trip: the cookie value to set and the URL to send the browser to.
 export type StartResult = { cookieValue: string, location: string }
@@ -85,9 +87,11 @@ export function createGithubSignInService(
   setting: GithubSignInSetting,
   limiter: RateLimiter,
   now: () => number,
-  log: SecurityLog
+  log: SecurityLog,
+  // Plan 048: present only when SESSION_TOKEN_FALLBACK is on.
+  codeStore?: SessionCodeStore
 ) {
-  function limitOrThrow(context: RequestContext, operation: typeof SECURITY_LOG.operation.githubStart | typeof SECURITY_LOG.operation.githubCallback | typeof SECURITY_LOG.operation.githubLink): void {
+  function limitOrThrow(context: RequestContext, operation: typeof SECURITY_LOG.operation.githubStart | typeof SECURITY_LOG.operation.githubCallback | typeof SECURITY_LOG.operation.githubLink | typeof SECURITY_LOG.operation.githubExchange): void {
     const wait = limiter.retryAfter(context.ip)
     if (wait !== undefined) {
       log(LogLevel.Warn, { requestId: context.requestId, operation, reason: SECURITY_LOG.reason.rateLimited })
@@ -128,11 +132,16 @@ export function createGithubSignInService(
     return frontendRedirect(`${GITHUB_SIGNIN.settingsPath}?${GITHUB_SIGNIN.settingsQuery}${error}`)
   }
 
+  // Plan 048: the one-time code for a session this callback just started.
+  function codeOf(started: StartedSession): { authCode?: string } {
+    return codeStore ? { authCode: codeStore.issue(started.id) } : {}
+  }
+
   async function signInTo(orgId: string, previousRawId: string | undefined, returnTo: string | undefined, context: RequestContext): Promise<CallbackResult> {
     await store.deleteExpiredSession(now())
     const started = await sessionService.start(orgId, previousRawId)
     log(LogLevel.Info, { requestId: context.requestId, operation: SECURITY_LOG.operation.githubCallback, reason: SECURITY_LOG.reason.success, orgId })
-    return { redirect: frontendRedirect(returnTo ?? '/'), started }
+    return { redirect: frontendRedirect(returnTo ?? '/'), started, ...codeOf(started) }
   }
 
   // The account of this GitHub id: the sign-in. The login is refreshed (it may have been renamed).
@@ -180,6 +189,19 @@ export function createGithubSignInService(
       await store.deleteIdentity(orgId, provider)
       log(LogLevel.Info, { requestId: context.requestId, operation: SECURITY_LOG.operation.githubUnlink, reason: SECURITY_LOG.reason.success, orgId })
       return accountOf({ ...record, githubLogin: null })
+    },
+
+    // POST /api/auth/github/exchange (plan 048): the session id behind a one-time code. Shares the
+    // GitHub sign-in rate limit. Every invalid code is the same generic 401; the code is never logged.
+    exchange(code: unknown, context: RequestContext): string {
+      limitOrThrow(context, SECURITY_LOG.operation.githubExchange)
+      const sessionId = codeStore?.consume(code)
+      if (sessionId === undefined) {
+        log(LogLevel.Warn, { requestId: context.requestId, operation: SECURITY_LOG.operation.githubExchange, reason: SECURITY_LOG.reason.invalidAuthCode })
+        throw unauthorizedError(ERROR_MESSAGE.authCodeInvalid)
+      }
+      log(LogLevel.Info, { requestId: context.requestId, operation: SECURITY_LOG.operation.githubExchange, reason: SECURITY_LOG.reason.success })
+      return sessionId
     },
 
     // GET /api/auth/github/callback. Every failure is a redirect with a code from the closed list
@@ -248,7 +270,7 @@ export function createGithubSignInService(
         if (created.ok) {
           log(LogLevel.Info, { requestId: context.requestId, operation: SECURITY_LOG.operation.githubCallback, reason: SECURITY_LOG.reason.success, orgId })
           const started = await sessionService.start(orgId, previousRawId)
-          return { redirect: frontendRedirect(pending.returnTo ?? '/'), started }
+          return { redirect: frontendRedirect(pending.returnTo ?? '/'), started, ...codeOf(started) }
         }
         // A conflict: a parallel callback took the GitHub id, the email or this name.
         const raced = await store.findIdentity(provider, profile.id)

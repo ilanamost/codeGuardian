@@ -1,6 +1,6 @@
 # Plan 047: iPhone sign-in: no zoom on focus, a clear session message and a bearer-token session fallback
 
-Status: active (approved 2026-11-07; Q1 = B same branch, Q2 = A localStorage, Q3 = A not now, Q4 = A default off). Waiting for the owner's real-iPhone test.
+Status: done (approved 2026-11-07; Q1 = B same branch, Q2 = A localStorage, Q3 = A not now, Q4 = A default off). Closed at the owner's request on 2026-11-07; validation item 11 (real iPhone, deployed app) was not recorded as passed.
 Owner: orchestrator (backend and frontend agents implement)
 Last updated: 2026-11-07
 Branch: feat/iphone-login-session-ended-and-zoom (one plan, one PR; nothing committed yet)

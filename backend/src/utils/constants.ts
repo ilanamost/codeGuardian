@@ -35,7 +35,9 @@ export const ROUTE = {
   reset: '/reset',
   // Plan 040: under API_PATH.githubSignIn.
   callback: '/callback',
-  link: '/link'
+  link: '/link',
+  // Plan 048: under API_PATH.githubSignIn.
+  exchange: '/exchange'
 } as const
 
 // Names of the environment variables `loadConfig` reads. All but `enableTestRoute` are listed
@@ -211,7 +213,9 @@ export const SECURITY_LOG = {
     githubStart: 'auth.github.start',
     githubCallback: 'auth.github.callback',
     githubLink: 'auth.github.link',
-    githubUnlink: 'auth.github.unlink'
+    githubUnlink: 'auth.github.unlink',
+    // Plan 048: the one-time code swapped for the session token.
+    githubExchange: 'auth.github.exchange'
   },
   reason: {
     success: 'success',
@@ -236,7 +240,8 @@ export const SECURITY_LOG = {
     noPassword: 'no_password',
     notLinked: 'not_linked',
     lastSignInMethod: 'last_sign_in_method',
-    alreadyLinked: 'already_linked'
+    alreadyLinked: 'already_linked',
+    invalidAuthCode: 'invalid_auth_code'
   }
 } as const
 
@@ -333,6 +338,16 @@ export const GITHUB_SIGNIN = {
   loginPattern: /^[A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38}$/,
   idPattern: /^[0-9]{1,20}$/,
   unpairedSurrogate: /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g
+} as const
+
+// Plan 048: the one-time code (authCode) a successful GitHub sign-in puts in the redirect
+// fragment. 32 random bytes in base64url, kept in memory as a hash, single use.
+export const SESSION_CODE = {
+  ttlMs: 60_000,
+  maxCount: 1000,
+  fragmentParam: 'auth_code',
+  // base64url of 32 random bytes, no padding.
+  pattern: /^[A-Za-z0-9_-]{43}$/
 } as const
 
 // Used to read a request body whose charset Node does not know.

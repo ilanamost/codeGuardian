@@ -18,8 +18,8 @@ function publicOperationList(): string[] {
 }
 
 describe('contract helper', () => {
-  it('is on contract version 0.18.0', () => {
-    expect((contract.info as { version: string }).version).toBe('0.18.0')
+  it('is on contract version 0.19.0', () => {
+    expect((contract.info as { version: string }).version).toBe('0.19.0')
   })
 
   it('requires the session cookie globally, with only the public routes marked security: [] (plan 028)', () => {
@@ -27,7 +27,7 @@ describe('contract helper', () => {
     const scheme = (contract.components as { securitySchemes: Record<string, unknown> }).securitySchemes.sessionCookie
     expect(scheme).toMatchObject({ type: 'apiKey', in: 'cookie', name: 'cr_session' })
     expect(publicOperationList().sort()).toEqual([
-      'GET /api/auth/github', 'GET /api/auth/github/callback', 'GET /api/health', 'GET /api/session', 'POST /api/account', 'POST /api/session', 'POST /api/test/reset'
+      'GET /api/auth/github', 'GET /api/auth/github/callback', 'GET /api/health', 'GET /api/session', 'POST /api/account', 'POST /api/auth/github/exchange', 'POST /api/session', 'POST /api/test/reset'
     ])
   })
 
