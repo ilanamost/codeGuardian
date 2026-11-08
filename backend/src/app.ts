@@ -8,6 +8,7 @@ import { createCsrfGuard } from './lib/csrf.js'
 import { frontendBasePathOf } from './lib/frontend-base.js'
 import { createGithubSignInClient, type GithubSignInClient } from './lib/github-signin-client.js'
 import { createLoginLimiter, createRateLimiter } from './lib/rate-limit.js'
+import { createSessionCodeStore } from './lib/session-code.js'
 import { createSecurityLog, type SecurityLogger } from './lib/security-log.js'
 import { createSessionGuard, type PublicRoute } from './lib/session-guard.js'
 import { exceedsCharLimit } from './lib/validate.js'
@@ -33,7 +34,7 @@ import { createSessionService } from './service/session.service.js'
 import { createSettingsService } from './service/settings.service.js'
 import { createSupportService } from './service/support.service.js'
 import { createTestService } from './service/test.service.js'
-import { API_PATH, DEFAULT_CHARSET, HEADER, HEALTH_STATUS_OK, ROUTE, STATE_CHANGING_METHOD_LIST } from './utils/constants.js'
+import { API_PATH, DEFAULT_CHARSET, HEADER, HEALTH_STATUS_OK, ROUTE, SESSION_CODE, STATE_CHANGING_METHOD_LIST } from './utils/constants.js'
 import { AnalyzerKind } from './utils/domain.js'
 import { ERROR_MESSAGE } from './utils/error-messages.js'
 import { LIMIT } from './utils/limits.js'
@@ -88,6 +89,9 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
   // GitHub sign-in start, callback and link per client IP (plan 040).
   const githubSignInLimiter = createRateLimiter({ ...LIMIT.rateLimit.githubSignInIp, now })
 
+  // Plan 048: one-time sign-in codes, only with the token fallback on.
+  const sessionCodeStore = tokenFallback ? createSessionCodeStore({ now, ttlMs: SESSION_CODE.ttlMs, maxCount: SESSION_CODE.maxCount }) : undefined
+
   const publicList: PublicRoute[] = [
     { method: 'GET', path: API_PATH.health },
     { method: 'POST', path: API_PATH.account },
@@ -96,6 +100,8 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
     // Plan 040: the GitHub sign-in redirects. Public even when the feature is off, where they are a 404.
     { method: 'GET', path: API_PATH.githubSignIn },
     { method: 'GET', path: `${API_PATH.githubSignIn}${ROUTE.callback}` },
+    // Plan 048: public even when the switch is off, where it is a 404.
+    { method: 'POST', path: `${API_PATH.githubSignIn}${ROUTE.exchange}` },
     ...(config.enableTestRoute ? [{ method: 'POST', path: `${API_PATH.test}${ROUTE.reset}` }] : [])
   ]
 
@@ -140,9 +146,9 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
     const githubSignInService = createGithubSignInService(
       store, sessionService, githubSignInClient,
       { clientId: config.githubOAuth.clientId, redirectUrl: config.githubOAuth.redirectUrl, frontendOrigin, frontendBasePath: frontendBasePathOf(config.frontendUrl) },
-      githubSignInLimiter, now, log
+      githubSignInLimiter, now, log, sessionCodeStore
     )
-    app.use(API_PATH.githubSignIn, createGithubSignInRouter(githubSignInService, cookie))
+    app.use(API_PATH.githubSignIn, createGithubSignInRouter(githubSignInService, cookie, tokenFallback))
   }
   app.use(API_PATH.review, createReviewRouter(reviewService))
   app.use(API_PATH.dashboard, createDashboardRouter(createDashboardService(store, now)))
@@ -156,7 +162,7 @@ export function createApp(config: AppRuntimeConfig, option: AppOption = {}) {
   app.use(API_PATH.supportRequest, createSupportRouter(createSupportService(store, now, { limiter: supportLimiter })))
   app.use(API_PATH.account, createAccountRouter(accountService, cookie, tokenFallback))
   if (config.enableTestRoute) {
-    app.use(API_PATH.test, createTestRouter(createTestService(store, [limiter, supportLimiter, githubSignInLimiter, reviewService])))
+    app.use(API_PATH.test, createTestRouter(createTestService(store, [limiter, supportLimiter, githubSignInLimiter, reviewService, ...(sessionCodeStore ? [sessionCodeStore] : [])])))
   }
 
   app.use((req, _res, next) => {

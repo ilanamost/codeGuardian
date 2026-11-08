@@ -95,6 +95,7 @@ export function createFakeServices() {
       signIn: vi.fn(async (_input: SignInDto): Promise<AccountDto> => structuredClone(fixtureData.account)),
       signOut: vi.fn(async () => undefined),
       githubSignIn: vi.fn(async () => false),
+      exchangeGithubCode: vi.fn(async (_code: string) => undefined),
       abortAll: vi.fn(() => undefined)
     },
     report: {

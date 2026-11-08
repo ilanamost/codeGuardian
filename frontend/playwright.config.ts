@@ -47,6 +47,12 @@ export default defineConfig({
         ANTHROPIC_API_KEY: '',
         // Plan 047: sign-in may return a sessionToken; the browser uses it only if the cookie fails.
         SESSION_TOKEN_FALLBACK: 'on',
+        // Plan 048: "Continue with GitHub" against the backend's in-memory fake GitHub (no network).
+        // The settings are placeholders, not secrets.
+        GITHUB_OAUTH_FAKE: 'true',
+        GITHUB_OAUTH_CLIENT_ID: 'e2e-client-id',
+        GITHUB_OAUTH_CLIENT_SECRET: 'e2e-client-secret',
+        GITHUB_OAUTH_REDIRECT_URL: `${BACKEND_URL}/api/auth/github/callback`,
         PORT: BACKEND_PORT,
         FRONTEND_URL,
         DATABASE_URL: env.TEST_DATABASE_URL ?? ''

@@ -57,6 +57,8 @@ export const ERROR_MESSAGE = {
   // account exists or which field is taken.
   signInFailed: 'Incorrect user name or password.',
   sessionRequired: 'Sign in to continue.',
+  // Plan 048: the same text for an unknown, expired, used or malformed sign-in code.
+  authCodeInvalid: 'The sign-in code is not valid.',
   accountUnavailable: 'This user name or email cannot be used.',
   passwordWeak: 'The password does not meet the password rules.',
   tooManyAttempt: (second: number) => `Too many attempts. Try again in ${second} seconds.`,
